@@ -71,22 +71,22 @@ if grep -q '## \[Unreleased\]' CHANGELOG.md 2>/dev/null; then
   echo -e "${GREEN}Updated CHANGELOG.md → [${NEW_VERSION}] - ${DATE}${NC}"
 fi
 
+# Create a branch for the release
+RELEASE_BRANCH="release/v${NEW_VERSION}"
+git checkout -b "$RELEASE_BRANCH"
+
 # Commit, tag, and push
 git add package.json package-lock.json CHANGELOG.md 2>/dev/null || git add package.json CHANGELOG.md
 git commit -m "release: v${NEW_VERSION}"
 git tag "v${NEW_VERSION}"
 
 echo -e "${YELLOW}Pushing to origin...${NC}"
-git push origin main --tags
+git push origin "$RELEASE_BRANCH" --tags
 
 echo ""
-echo -e "${GREEN}=== Release v${NEW_VERSION} pushed! ===${NC}"
+echo -e "${GREEN}=== Release branch ${RELEASE_BRANCH} pushed! ===${NC}"
 echo ""
-echo "GitHub Actions will now:"
-echo "  1. Run typecheck + tests"
-echo "  2. Package the .vsix"
-echo "  3. Publish to VS Code Marketplace"
-echo "  4. Create a GitHub Release"
+echo "Now open a Pull Request to merge ${RELEASE_BRANCH} into main:"
+echo "  https://github.com/enzomar/archipilot/pull/new/${RELEASE_BRANCH}"
 echo ""
-echo "Track progress: https://github.com/enzomar/archipilot/actions"
-echo "Marketplace:    https://marketplace.visualstudio.com/items?itemName=enzomar.archipilot"
+
