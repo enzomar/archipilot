@@ -12,7 +12,6 @@ A VS Code Chat Participant extension that turns your Obsidian architecture vault
   <em>Ask architecture questions, resolve decisions, update vault documents — all from Copilot Chat.</em>
 </p>
 
-> **Tip:** To add a demo image, capture a screen recording in the Extension Development Host (e.g., with [Kap](https://getkap.co/) or [LICEcap](https://www.cockos.com/licecap/)), save as `media/demo.png` or `media/demo.gif`, and add `<img src="media/demo.png">` here.
 
 ## Features
 
@@ -135,7 +134,7 @@ Ask anything about your architecture. The agent uses the full vault as context.
 @architect Summarize all open decisions and their impact
 @architect Which components depend on the API Gateway?
 @architect What are the main risks if we choose Option C for AD-01?
-@architect Explain the data flow between the Conversational Interface and the Loyalty Rule Engine
+@architect Explain the data flow between the Conversational Interface and the  Rule Engine
 ```
 
 ### `@architect /analyze` — Impact Analysis (Read-Only)
@@ -145,9 +144,9 @@ Assess the impact of a proposed change without modifying any file.
 ```
 @architect /analyze What happens if we drop the API Gateway and use direct service-to-service calls?
 @architect /analyze Impact of moving from single-vendor to multi-vendor LLM strategy
-@architect /analyze What would change if we make this Loyalty-only instead of enterprise-wide?
+@architect /analyze What would change if we make this -only instead of enterprise-wide?
 @architect /analyze Assess the effect of adding a real-time event bus to the integration layer
-@architect /analyze How does removing DEP-03 (Loyalty Rule Engine) affect our scenarios?
+@architect /analyze How does removing DEP-03 (Rule Engine) affect our scenarios?
 ```
 
 ### `@architect /decide` — Decision Support
@@ -155,7 +154,7 @@ Assess the impact of a proposed change without modifying any file.
 Get structured pros/cons analysis and recommendations for open decisions.
 
 ```
-@architect /decide Help me resolve AD-01 — should we go with Loyalty Feature, Enterprise Service, or AI Platform?
+@architect /decide Help me resolve AD-01 — should we go with  Feature, Enterprise Service, or AI Platform?
 @architect /decide We need to pick between Kafka and RabbitMQ for the event bus. What does the architecture suggest?
 @architect /decide Should we build or buy the Context Aggregation Engine?
 @architect /decide Evaluate self-hosted LLM vs cloud API given our data residency constraints
@@ -232,7 +231,7 @@ Switch the active vault when working with multiple architecture projects.
 Generate C4 architecture diagrams in Mermaid syntax from your vault content.
 
 ```
-@architect /c4 Generate a System Context diagram for the AI Loyalty Assistant
+@architect /c4 Generate a System Context diagram for the AI Assistant
 @architect /c4 Create a Container diagram showing all components and their interactions
 @architect /c4 Component diagram for the Context Aggregation Engine
 @architect /c4 Show the deployment view across cloud regions

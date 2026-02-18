@@ -1,4 +1,4 @@
-name: Auto Version Bump
+name: Auto Version Bump & Publish
 
 on:
   push:
@@ -12,15 +12,12 @@ permissions:
   contents: write
 
 jobs:
-  bump:
+  bump-and-publish:
     runs-on: ubuntu-latest
     if: |
       github.repository == 'enzomar/archipilot' &&
       !startsWith(github.event.head_commit.message, 'release:') &&
       !startsWith(github.event.head_commit.message, 'chore(release)')
-    outputs:
-      bumped: ${{ steps.bump.outputs.bumped }}
-      new_version: ${{ steps.bump.outputs.new_version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -83,25 +80,63 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # npm version creates commit + tag
-          NEW_VERSION=$(npm version "$BUMP" -m "release: v%s" --no-git-tag-version)
-
-          # Update CHANGELOG with new version header
-          DATE=$(date +%Y-%m-%d)
+          # Bump package.json (no git commit/tag yet)
+          NEW_VERSION=$(npm version "$BUMP" --no-git-tag-version)
           VERSION_NUM="${NEW_VERSION#v}"
-          if grep -q "## \[Unreleased\]" CHANGELOG.md; then
+
+          # Stamp CHANGELOG [Unreleased] → [x.y.z] - date
+          DATE=$(date +%Y-%m-%d)
+          if grep -q "## \[Unreleased\]" CHANGELOG.md 2>/dev/null; then
             sed -i "s/## \[Unreleased\]/## [${VERSION_NUM}] - ${DATE}/" CHANGELOG.md
           fi
 
           # Commit, tag, and push
-          git add package.json CHANGELOG.md
+          git add package.json package-lock.json CHANGELOG.md 2>/dev/null || git add package.json CHANGELOG.md
           git commit -m "release: v${VERSION_NUM}"
           git tag "v${VERSION_NUM}"
           git push origin main --tags
 
           echo "bumped=true" >> "$GITHUB_OUTPUT"
           echo "new_version=${VERSION_NUM}" >> "$GITHUB_OUTPUT"
-          echo "Released v${VERSION_NUM}"
+          echo "tag=v${VERSION_NUM}" >> "$GITHUB_OUTPUT"
+          echo "✅ Bumped to v${VERSION_NUM}"
+
+      # ── Publish (runs in the same job so package.json is already bumped) ──
+
+      - name: Package VSIX
+        if: steps.bump.outputs.bumped == 'true'
+        run: npx @vscode/vsce package --no-dependencies
+
+      - name: Verify VSIX version
+        if: steps.bump.outputs.bumped == 'true'
+        run: |
+          EXPECTED="${{ steps.bump.outputs.new_version }}"
+          VSIX_FILE=$(ls *.vsix 2>/dev/null | head -1)
+          if [ -z "$VSIX_FILE" ]; then
+            echo "❌ No VSIX file found!"
+            exit 1
+          fi
+          echo "VSIX: $VSIX_FILE"
+          if echo "$VSIX_FILE" | grep -q "$EXPECTED"; then
+            echo "✅ VSIX version matches: $EXPECTED"
+          else
+            echo "⚠️  VSIX filename ($VSIX_FILE) does not contain expected version ($EXPECTED)"
+            # Still continue — vsce uses package.json version internally
+          fi
+
+      - name: Publish to Marketplace
+        if: steps.bump.outputs.bumped == 'true'
+        run: npx @vscode/vsce publish --pat "$VSCE_PAT" --no-dependencies
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Create GitHub Release
+        if: steps.bump.outputs.bumped == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.bump.outputs.tag }}
+          files: '*.vsix'
+          generate_release_notes: true
 
       - name: Skip — no bump needed
         if: steps.bump_type.outputs.bump == 'none'
