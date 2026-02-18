@@ -1,0 +1,30 @@
+# Build output
+out/
+
+# Dependencies
+node_modules/
+
+# VS Code test runner
+.vscode-test/
+
+# Packaged extension
+*.vsix
+
+# macOS
+.DS_Store
+
+# Editor
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# Real architecture vaults (keep your data private)
+# Only the examples/ folder is committed
+AI-Loyalty-Architecture/
+*-Architecture/
+architectures/
+!examples/

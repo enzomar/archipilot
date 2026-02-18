@@ -1,0 +1,200 @@
+{
+  "name": "achipilot",
+  "displayName": "AchiPilot – Enterprise Architecture Copilot",
+  "description": "TOGAF-aligned Enterprise Architecture assistant that uses Obsidian vaults as structured context, powered by GitHub Copilot.",
+  "version": "0.5.0-beta",
+  "publisher": "enzomar",
+  "author": {
+    "name": "Vincenzo Marafioti",
+    "url": "https://github.com/enzomar"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/enzomar/achipilot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/enzomar/achipilot/issues"
+  },
+  "homepage": "https://github.com/enzomar/achipilot#readme",
+  "keywords": [
+    "togaf",
+    "enterprise-architecture",
+    "obsidian",
+    "copilot",
+    "architecture-decision-records",
+    "adm",
+    "vscode-extension"
+  ],
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "AI",
+    "Chat"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "achipilot.architect",
+        "fullName": "AchiPilot",
+        "name": "architect",
+        "description": "Enterprise Architecture Copilot – TOGAF-aligned assistant for Obsidian architecture vaults",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "analyze",
+            "description": "Analyze architecture impact without modifying files"
+          },
+          {
+            "name": "decide",
+            "description": "Help resolve an architecture decision"
+          },
+          {
+            "name": "update",
+            "description": "Update vault documents (applies edits)"
+          },
+          {
+            "name": "status",
+            "description": "Show vault overview and decision status"
+          },
+          {
+            "name": "switch",
+            "description": "Switch active vault folder"
+          },
+          {
+            "name": "c4",
+            "description": "Generate a C4 model diagram (Context, Container, Component, Code)"
+          },
+          {
+            "name": "sizing",
+            "description": "Create or update a sizing catalogue (infrastructure, capacity, cost)"
+          },
+          {
+            "name": "timeline",
+            "description": "Generate a delivery timeline / Gantt from the roadmap"
+          },
+          {
+            "name": "new",
+            "description": "Create a new empty architecture vault / project"
+          },
+          {
+            "name": "archimate",
+            "description": "Export vault to ArchiMate Open Exchange Format 3.2 (XML)"
+          },
+          {
+            "name": "drawio",
+            "description": "Export vault to Draw.io diagrams (As-Is, Target, Migration with color-coded changes)"
+          },
+          {
+            "name": "todo",
+            "description": "List next TOGAF action items: open decisions, risks, questions, work packages, and more"
+          }
+        ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "achipilot.switchVault",
+        "title": "AchiPilot: Switch Architecture Vault"
+      },
+      {
+        "command": "achipilot.showStatus",
+        "title": "AchiPilot: Show Vault Status"
+      },
+      {
+        "command": "achipilot.applyCommand",
+        "title": "AchiPilot: Apply Architecture Command"
+      },
+      {
+        "command": "achipilot.newVault",
+        "title": "AchiPilot: Create New Architecture Vault"
+      },
+      {
+        "command": "achipilot.exportArchimate",
+        "title": "AchiPilot: Export Vault to ArchiMate (XML)"
+      },
+      {
+        "command": "achipilot.exportDrawio",
+        "title": "AchiPilot: Export Vault to Draw.io (As-Is / Target / Migration)"
+      }
+    ],
+    "configuration": {
+      "title": "AchiPilot",
+      "properties": {
+        "achipilot.vaultPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the active Obsidian architecture vault folder. Leave empty to auto-detect from workspace."
+        },
+        "achipilot.projectsRoot": {
+          "type": "string",
+          "default": "architectures",
+          "description": "Folder name (relative to workspace root) where architecture projects are created and discovered. The /new command creates vaults inside this folder."
+        }
+      }
+    },
+    "walkthroughs": [
+      {
+        "id": "achipilot.gettingStarted",
+        "title": "Get Started with AchiPilot",
+        "description": "Set up your TOGAF-aligned architecture vault and start working with your Enterprise Architecture Copilot.",
+        "steps": [
+          {
+            "id": "createVault",
+            "title": "Create an Architecture Vault",
+            "description": "Open Copilot Chat and type **@architect /new MyProject** to scaffold a TOGAF-aligned vault with 27 template files.\n\n[Create a vault](command:achipilot.newVault)",
+            "media": {
+              "markdown": "media/walkthrough-create.md"
+            }
+          },
+          {
+            "id": "checkStatus",
+            "title": "Check Vault Status",
+            "description": "Type **@architect /status** in Copilot Chat to see your vault overview — file counts, decision statuses, and open questions.\n\n[Show status](command:achipilot.showStatus)",
+            "media": {
+              "markdown": "media/walkthrough-status.md"
+            }
+          },
+          {
+            "id": "analyzeArchitecture",
+            "title": "Analyze Architecture Impact",
+            "description": "Ask **@architect /analyze** a question like *\"What is the impact of migrating to microservices?\"* to get a grounded analysis from your vault.",
+            "media": {
+              "markdown": "media/walkthrough-analyze.md"
+            }
+          },
+          {
+            "id": "updateVault",
+            "title": "Update Your Vault",
+            "description": "Use **@architect /update** to add decisions, update sections, or modify metadata. AchiPilot shows a diff preview before applying changes.",
+            "media": {
+              "markdown": "media/walkthrough-update.md"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "package": "node esbuild.mjs --production",
+    "typecheck": "tsc -p ./ --noEmit",
+    "lint": "eslint src/",
+    "test": "node --import tsx --test src/test/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.93.0",
+    "@typescript-eslint/eslint-plugin": "^8.56.0",
+    "@typescript-eslint/parser": "^8.56.0",
+    "esbuild": "^0.27.3",
+    "eslint": "^9.39.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.4.0"
+  }
+}

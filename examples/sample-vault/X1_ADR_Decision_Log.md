@@ -1,0 +1,45 @@
+---
+type: decision-log
+togaf_phase: cross-phase
+artifact_type: deliverable
+version: 1.0.0
+status: draft
+created: 2026-02-17
+last_modified: 2026-02-17
+owner: TBD
+---
+
+# Architecture Decision Log
+
+> Cross-phase — ADR-style decisions.
+
+---
+
+## AD-01 — [Your First Decision]
+
+| Field | Value |
+|-------|-------|
+| **Status** | 🟡 Open |
+| **Date Raised** | 2026-02-17 |
+| **Owner** | TBD |
+| **Phase** | A |
+
+### Context
+
+[Why does this decision need to be made?]
+
+### Options
+
+| Option | Pros | Cons |
+|--------|------|------|
+| A — ... | | |
+| B — ... | | |
+
+### Decision
+
+_Pending._
+
+### Consequences
+
+- Option A: ...
+- Option B: ...
