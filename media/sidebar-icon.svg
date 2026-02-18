@@ -1,3 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
-  <text x="1" y="13" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="currentColor" letter-spacing="-0.5">AP</text>
+<svg width="24" height="24" viewBox="0 0 24 24"
+     xmlns="http://www.w3.org/2000/svg"
+     fill="none">
+
+  <!-- Outer circle (architecture / system boundary) -->
+  <circle cx="12" cy="12" r="9"
+          stroke="currentColor"
+          stroke-width="1.6"/>
+
+  <!-- Compass needle (pilot / guidance) -->
+  <path d="M12 6 L15 15 L12 13 L9 15 Z"
+        fill="currentColor"/>
+
+  <!-- Small AI node indicator -->
+  <circle cx="18" cy="6" r="2"
+          fill="currentColor"/>
+
 </svg>
