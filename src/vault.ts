@@ -12,6 +12,9 @@ import { buildContext as coreBuildContext } from './core/context.js';
 export class VaultManager {
   private _activeVaultPath: string | undefined;
   private _cachedFiles: VaultFile[] = [];
+  private _cachedInfo: VaultInfo | undefined;
+  private _cacheTimestamp = 0;
+  private static readonly CACHE_TTL_MS = 3000;
   private _onDidChangeVault = new vscode.EventEmitter<VaultInfo | undefined>();
   public readonly onDidChangeVault = this._onDidChangeVault.event;
 
@@ -55,6 +58,7 @@ export class VaultManager {
   /** Set active vault and reload */
   async setActiveVault(vaultPath: string): Promise<VaultInfo> {
     this._activeVaultPath = vaultPath;
+    this.invalidateCache();
     await this._context.workspaceState.update('archipilot.activeVault', vaultPath);
     const info = await this.loadVault();
     this._onDidChangeVault.fire(info);
@@ -165,11 +169,18 @@ export class VaultManager {
 
   /**
    * Load all markdown files from the active vault into memory.
+   * Returns cached result if called within the TTL window.
    */
   async loadVault(): Promise<VaultInfo> {
     const vaultPath = this._activeVaultPath;
     if (!vaultPath) {
       throw new Error('No active vault. Use /switch to select one.');
+    }
+
+    // Return cached if fresh
+    const now = Date.now();
+    if (this._cachedInfo && this._cachedInfo.path === vaultPath && (now - this._cacheTimestamp) < VaultManager.CACHE_TTL_MS) {
+      return this._cachedInfo;
     }
 
     const vaultUri = vscode.Uri.file(vaultPath);
@@ -206,12 +217,22 @@ export class VaultManager {
 
     this._cachedFiles = files;
 
-    return {
+    const info: VaultInfo = {
       name: path.basename(vaultPath),
       path: vaultPath,
       fileCount: files.length,
       files,
     };
+    this._cachedInfo = info;
+    this._cacheTimestamp = Date.now();
+
+    return info;
+  }
+
+  /** Invalidate the load cache — forces next loadVault() to re-read from disk */
+  invalidateCache(): void {
+    this._cachedInfo = undefined;
+    this._cacheTimestamp = 0;
   }
 
   /** Get cached files (call loadVault first) */

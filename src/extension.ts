@@ -59,23 +59,15 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('archipilot.showStatus', async () => {
-      try {
-        const vaultPath = await vaultManager.autoDetectVault();
-        if (vaultPath) {
-          await vaultManager.setActiveVault(vaultPath);
-          const info = await vaultManager.loadVault();
-          const fileList = info.files.map((f) => `  • ${f.name}`).join('\n');
-          vscode.window.showInformationMessage(
-            `Vault: ${info.name}\nFiles: ${info.fileCount}\n${fileList}`,
-            { modal: true }
-          );
-        } else {
-          vscode.window.showWarningMessage(
-            'archipilot: No vault found. Use "archipilot: Switch Architecture Vault" to select one.'
-          );
-        }
-      } catch (err) {
-        vscode.window.showErrorMessage(`archipilot: ${err}`);
+      const vaultPath = await vaultManager.autoDetectVault();
+      if (vaultPath) {
+        vscode.commands.executeCommand('workbench.action.chat.open', {
+          query: '@architect /status',
+        });
+      } else {
+        vscode.window.showWarningMessage(
+          'archipilot: No vault found. Use "archipilot: Switch Architecture Vault" to select one.'
+        );
       }
     })
   );
@@ -90,6 +82,7 @@ export function activate(context: vscode.ExtensionContext): void {
           if (result.success) {
             vscode.window.showInformationMessage(`archipilot: ${result.message}`);
             await vaultManager.loadVault();
+            vscode.commands.executeCommand('archipilot.refreshSidebar');
           } else {
             vscode.window.showErrorMessage(`archipilot: ${result.message}`);
           }
@@ -227,8 +220,19 @@ export function activate(context: vscode.ExtensionContext): void {
       if (item?.resourceUri) {
         const fileName = item.resourceUri.fsPath.split('/').pop()?.replace(/\.md$/, '') || '';
         vscode.commands.executeCommand('workbench.action.chat.open', {
-          query: `@architect /analyze Tell me about the ${fileName} artifact`,
+          query: `@architect /analyze Review the current state of ${fileName} — identify gaps, missing sections, and recommended next actions`,
         });
+      }
+    }),
+  );
+
+  // ── File-save watcher: auto-refresh sidebar when vault files change ──
+  context.subscriptions.push(
+    vscode.workspace.onDidSaveTextDocument((doc) => {
+      const vaultPath = vaultManager.activeVaultPath;
+      if (vaultPath && doc.uri.fsPath.startsWith(vaultPath) && doc.uri.fsPath.endsWith('.md')) {
+        vaultManager.invalidateCache();
+        vscode.commands.executeCommand('archipilot.refreshSidebar');
       }
     }),
   );

@@ -189,7 +189,14 @@ interface ActionDef {
   command: string;
   args?: any[];
   description?: string;
+  group: 'architecture' | 'diagrams' | 'management';
 }
+
+const ACTION_GROUPS: { key: string; label: string; icon: string }[] = [
+  { key: 'architecture', label: 'Architecture', icon: 'library' },
+  { key: 'diagrams',     label: 'Diagrams & Export', icon: 'export' },
+  { key: 'management',   label: 'Vault Management', icon: 'folder' },
+];
 
 const QUICK_ACTIONS: ActionDef[] = [
   {
@@ -198,6 +205,7 @@ const QUICK_ACTIONS: ActionDef[] = [
     command: 'workbench.action.chat.open',
     args: [{ query: '@architect /analyze ' }],
     description: '/analyze',
+    group: 'architecture',
   },
   {
     label: 'Show Vault Status',
@@ -205,6 +213,7 @@ const QUICK_ACTIONS: ActionDef[] = [
     command: 'workbench.action.chat.open',
     args: [{ query: '@architect /status' }],
     description: '/status',
+    group: 'architecture',
   },
   {
     label: 'Record a Decision',
@@ -212,6 +221,7 @@ const QUICK_ACTIONS: ActionDef[] = [
     command: 'workbench.action.chat.open',
     args: [{ query: '@architect /decide ' }],
     description: '/decide',
+    group: 'architecture',
   },
   {
     label: 'Update Vault',
@@ -219,6 +229,7 @@ const QUICK_ACTIONS: ActionDef[] = [
     command: 'workbench.action.chat.open',
     args: [{ query: '@architect /update ' }],
     description: '/update',
+    group: 'architecture',
   },
   {
     label: 'List TODO Items',
@@ -226,6 +237,7 @@ const QUICK_ACTIONS: ActionDef[] = [
     command: 'workbench.action.chat.open',
     args: [{ query: '@architect /todo' }],
     description: '/todo',
+    group: 'architecture',
   },
   {
     label: 'Generate C4 Diagram',
@@ -233,6 +245,7 @@ const QUICK_ACTIONS: ActionDef[] = [
     command: 'workbench.action.chat.open',
     args: [{ query: '@architect /c4 ' }],
     description: '/c4',
+    group: 'diagrams',
   },
   {
     label: 'Generate Timeline',
@@ -240,6 +253,7 @@ const QUICK_ACTIONS: ActionDef[] = [
     command: 'workbench.action.chat.open',
     args: [{ query: '@architect /timeline' }],
     description: '/timeline',
+    group: 'diagrams',
   },
   {
     label: 'Sizing Catalogue',
@@ -247,30 +261,35 @@ const QUICK_ACTIONS: ActionDef[] = [
     command: 'workbench.action.chat.open',
     args: [{ query: '@architect /sizing ' }],
     description: '/sizing',
+    group: 'diagrams',
   },
   {
     label: 'Export to ArchiMate',
     icon: 'export',
     command: 'archipilot.exportArchimate',
     description: 'XML export',
+    group: 'diagrams',
   },
   {
     label: 'Export to Draw.io',
     icon: 'file-media',
     command: 'archipilot.exportDrawio',
     description: 'Draw.io export',
+    group: 'diagrams',
   },
   {
     label: 'Create New Vault',
     icon: 'new-folder',
     command: 'archipilot.newVault',
     description: 'Scaffold project',
+    group: 'management',
   },
   {
     label: 'Switch Vault',
     icon: 'folder-opened',
     command: 'archipilot.switchVault',
     description: 'Change active vault',
+    group: 'management',
   },
 ];
 
@@ -286,19 +305,36 @@ export class QuickActionsProvider implements vscode.TreeDataProvider<SidebarItem
     return element;
   }
 
-  async getChildren(): Promise<SidebarItem[]> {
-    return QUICK_ACTIONS.map(
-      (a) =>
-        new SidebarItem(a.label, vscode.TreeItemCollapsibleState.None, {
-          icon: a.icon,
-          description: a.description,
-          command: {
-            command: a.command,
-            title: a.label,
-            arguments: a.args,
-          },
-        }),
-    );
+  async getChildren(element?: SidebarItem): Promise<SidebarItem[]> {
+    // Top level: show groups
+    if (!element) {
+      return ACTION_GROUPS.map(
+        (g) =>
+          new SidebarItem(g.label, vscode.TreeItemCollapsibleState.Expanded, {
+            icon: g.icon,
+            description: `${QUICK_ACTIONS.filter((a) => a.group === g.key).length}`,
+          }),
+      );
+    }
+
+    // Children: actions in this group
+    const groupKey = ACTION_GROUPS.find((g) => g.label === element.label)?.key;
+    if (groupKey) {
+      return QUICK_ACTIONS.filter((a) => a.group === groupKey).map(
+        (a) =>
+          new SidebarItem(a.label, vscode.TreeItemCollapsibleState.None, {
+            icon: a.icon,
+            description: a.description,
+            command: {
+              command: a.command,
+              title: a.label,
+              arguments: a.args,
+            },
+          }),
+      );
+    }
+
+    return [];
   }
 }
 
@@ -392,6 +428,11 @@ export class ArchitectureHealthProvider implements vscode.TreeDataProvider<Sideb
             icon: healthIcon,
             description: `${total} open items`,
             tooltip: `Critical: ${criticalCount} | High: ${highCount} | Medium: ${summary.byPriorityCount.medium || 0} | Low: ${summary.byPriorityCount.low || 0}`,
+            command: {
+              command: 'workbench.action.chat.open',
+              title: 'View full health report',
+              arguments: [{ query: '@architect /todo Summarize health and prioritize the top 5 actions' }],
+            },
           },
         ),
       );
