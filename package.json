@@ -2,7 +2,7 @@
   "name": "archipilot",
   "displayName": "archipilot – Enterprise Architecture Copilot",
   "description": "TOGAF-aligned Enterprise Architecture assistant that uses Obsidian vaults as structured context, powered by GitHub Copilot.",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "publisher": "enzomar",
   "icon": "media/icon.png",
   "author": {
