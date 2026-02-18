@@ -226,6 +226,14 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
 
+  context.subscriptions.push(
+    vscode.commands.registerCommand('archipilot.openSplitPreview', (item: any) => {
+      if (item?.resourceUri) {
+        vscode.commands.executeCommand('markdown.showPreviewToSide', item.resourceUri);
+      }
+    }),
+  );
+
   // ── File-save watcher: auto-refresh sidebar when vault files change ──
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument((doc) => {
