@@ -1,12 +1,14 @@
 name: Auto Version Bump & Publish
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
-    paths-ignore:
-      - '*.md'
-      - 'LICENSE'
-      - '.github/workflows/ci.yml'
+
+concurrency:
+  group: bump-and-publish
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -16,12 +18,15 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.repository == 'enzomar/archipilot' &&
-      !startsWith(github.event.head_commit.message, 'release:') &&
-      !startsWith(github.event.head_commit.message, 'chore(release)')
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      !startsWith(github.event.workflow_run.head_commit.message, 'release:') &&
+      !startsWith(github.event.workflow_run.head_commit.message, 'chore(release)')
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Use Node.js 22
@@ -32,12 +37,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Run tests
-        run: npm test
 
       - name: Determine bump type from commits
         id: bump_type

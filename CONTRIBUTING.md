@@ -88,9 +88,22 @@ archipilot follows TOGAF ADM phases. When contributing:
 
 ## Branch Strategy
 
-The `main` branch is protected. All changes must go through a pull request with passing CI before merging.
+archipilot uses a **trunk-based** workflow optimized for a solo maintainer:
 
-### Development Workflow
+- **`main`** is the primary branch. Direct pushes are fine for the maintainer.
+- **Feature branches + PRs** are used for larger changes or external contributions.
+- Versions are bumped **automatically** by CI when conventional commit prefixes are detected.
+
+### Solo Maintainer — Quick Flow
+
+```bash
+# Small fix — push directly to main
+git add . && git commit -m "fix: handle empty vault in sidebar"
+git push origin main
+# CI runs → auto-bump detects "fix:" → publishes patch release
+```
+
+### Contributor / Larger Changes — PR Flow
 
 ```bash
 # 1. Create a feature branch
@@ -100,20 +113,21 @@ git checkout -b feat/add-compliance
 git add .
 git commit -m "feat: add /compliance command for Phase G"
 
-# 3. Push the branch
+# 3. Push and open a PR
 git push origin feat/add-compliance
-
-# 4. Create a pull request
 gh pr create --fill
-# or open https://github.com/enzomar/archipilot/compare/feat/add-compliance
 
-# 5. Wait for CI to pass, review the diff, then merge
+# 4. CI runs on the PR. Merge when green.
 gh pr merge --squash
-# or merge via the GitHub UI
 
-# 6. Release from main
+# 5. Auto-bump kicks in on main after merge
+```
+
+### Manual Release (override auto-bump)
+
+```bash
 git checkout main && git pull
-./scripts/release.sh patch
+./scripts/release.sh patch   # or minor / major / 1.0.0
 ```
 
 ### Branch Naming Convention
@@ -128,11 +142,23 @@ git checkout main && git pull
 
 ## Releasing a New Version
 
-Releases are automated via GitHub Actions. When you push a version tag, CI will test, package, publish to the VS Code Marketplace, and create a GitHub Release.
+Releases are **fully automated** via CI. When you push to `main` with a conventional commit prefix, the pipeline:
 
-### Quick Release
+1. Runs CI (typecheck + tests on Node 20 & 22)
+2. Detects the bump type from commit messages
+3. Bumps `package.json`, stamps `CHANGELOG.md`
+4. Tags, publishes to the VS Code Marketplace, creates a GitHub Release
 
-Use the helper script:
+| Commit prefix | Bump | Example |
+|---|---|---|
+| `feat:` | minor (0.5.0 → 0.6.0) | `feat: add sidebar panel` |
+| `fix:`, `refactor:`, `perf:`, etc. | patch (0.5.0 → 0.5.1) | `fix: handle empty vault` |
+| `feat!:` / `BREAKING CHANGE` | major (0.5.0 → 1.0.0) | `feat!: redesign API` |
+| No prefix | skip | `update docs` |
+
+### Manual Override
+
+Use the helper script to bypass auto-bump:
 
 ```bash
 # Stable release (removes -beta if present)
@@ -162,10 +188,12 @@ git push origin main --tags
 
 ### What Happens Automatically
 
-1. GitHub Actions runs typecheck + tests
-2. Packages the `.vsix`
-3. Publishes to the VS Code Marketplace
-4. Creates a GitHub Release with the `.vsix` attached
+1. **CI** runs typecheck + tests (Node 20 & 22)
+2. **Auto-bump** detects conventional commit prefixes, bumps version
+3. Packages the `.vsix`
+4. Publishes to the VS Code Marketplace
+5. Creates a GitHub Release with the `.vsix` attached
+6. Stamps `CHANGELOG.md` with version + date
 
 ### Pre-requisites (one-time setup)
 

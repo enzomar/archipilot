@@ -53,14 +53,29 @@ npm run typecheck
 echo -e "${YELLOW}Running tests...${NC}"
 npm test
 
-# Bump version (npm version creates the commit + tag automatically)
+# Bump version in package.json (no git commit yet)
 echo -e "${YELLOW}Bumping version: ${VERSION_ARG}...${NC}"
-npm version "$VERSION_ARG" -m "release: v%s"
+npm version "$VERSION_ARG" --no-git-tag-version
 
 # Get the new version from package.json
 NEW_VERSION=$(node -p "require('./package.json').version")
 
-# Push commit + tag
+# Stamp CHANGELOG [Unreleased] → [x.y.z] - date
+DATE=$(date +%Y-%m-%d)
+if grep -q '## \[Unreleased\]' CHANGELOG.md 2>/dev/null; then
+  if [[ "$(uname)" == "Darwin" ]]; then
+    sed -i '' "s/## \[Unreleased\]/## [${NEW_VERSION}] - ${DATE}/" CHANGELOG.md
+  else
+    sed -i "s/## \[Unreleased\]/## [${NEW_VERSION}] - ${DATE}/" CHANGELOG.md
+  fi
+  echo -e "${GREEN}Updated CHANGELOG.md → [${NEW_VERSION}] - ${DATE}${NC}"
+fi
+
+# Commit, tag, and push
+git add package.json package-lock.json CHANGELOG.md 2>/dev/null || git add package.json CHANGELOG.md
+git commit -m "release: v${NEW_VERSION}"
+git tag "v${NEW_VERSION}"
+
 echo -e "${YELLOW}Pushing to origin...${NC}"
 git push origin main --tags
 
