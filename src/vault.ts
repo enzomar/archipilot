@@ -17,7 +17,7 @@ export class VaultManager {
 
   constructor(private readonly _context: vscode.ExtensionContext) {
     // Restore last active vault from workspace state
-    this._activeVaultPath = _context.workspaceState.get<string>('achipilot.activeVault');
+    this._activeVaultPath = _context.workspaceState.get<string>('archipilot.activeVault');
   }
 
   /** Current active vault path */
@@ -37,7 +37,7 @@ export class VaultManager {
     }
 
     const configured = vscode.workspace
-      .getConfiguration('achipilot')
+      .getConfiguration('archipilot')
       .get<string>('projectsRoot', 'architectures');
 
     const rootUri = vscode.Uri.joinPath(workspaceFolders[0].uri, configured || 'architectures');
@@ -55,7 +55,7 @@ export class VaultManager {
   /** Set active vault and reload */
   async setActiveVault(vaultPath: string): Promise<VaultInfo> {
     this._activeVaultPath = vaultPath;
-    await this._context.workspaceState.update('achipilot.activeVault', vaultPath);
+    await this._context.workspaceState.update('archipilot.activeVault', vaultPath);
     const info = await this.loadVault();
     this._onDidChangeVault.fire(info);
     return info;
@@ -97,7 +97,7 @@ export class VaultManager {
 
       // Also scan the configured projects root (may be nested deeper)
       const projectsRoot = vscode.workspace
-        .getConfiguration('achipilot')
+        .getConfiguration('archipilot')
         .get<string>('projectsRoot', 'architectures');
       if (projectsRoot) {
         const rootUri = vscode.Uri.joinPath(folder.uri, projectsRoot);
@@ -140,7 +140,7 @@ export class VaultManager {
     }
 
     // 2. Check setting
-    const configured = vscode.workspace.getConfiguration('achipilot').get<string>('vaultPath');
+    const configured = vscode.workspace.getConfiguration('archipilot').get<string>('vaultPath');
     if (configured) {
       try {
         await vscode.workspace.fs.stat(vscode.Uri.file(configured));
@@ -276,7 +276,7 @@ export class VaultManager {
 
     const picked = await vscode.window.showQuickPick(items, {
       placeHolder: 'Select an architecture vault',
-      title: 'AchiPilot – Switch Vault',
+      title: 'archipilot – Switch Vault',
     });
 
     if (!picked) {

@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to AchiPilot will be documented in this file.
+All notable changes to archipilot will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **`/archimate` command** — Export the active vault to an ArchiMate 3.2 Open Exchange Format (OEFF) XML file, compatible with Archi, BiZZdesign, Sparx EA, and ADOIT. Extracts elements across all ArchiMate layers (Business, Application, Technology, Motivation, Strategy, Implementation & Migration), infers cross-layer relationships, and auto-generates five views. Includes AI-powered export quality analysis.
-- **`achipilot.exportArchimate` palette command** — Quick-export from the Command Palette without opening chat.
+- **`archipilot.exportArchimate` palette command** — Quick-export from the Command Palette without opening chat.
 - **ArchiMate exporter core module** (`src/core/archimate-exporter.ts`) — Pure TypeScript module (zero vscode deps) with parsers for YAML front matter, markdown tables, and Mermaid graph diagrams. Phase-specific extractors map TOGAF ADM content to ArchiMate 3.2 element types with intelligent type inference (e.g., databases → SystemSoftware, API gateways → TechnologyService).
 - **esbuild bundler** — VSIX packaging now uses esbuild for a single-file, tree-shaken bundle (~30× smaller than raw `tsc` output). New scripts: `compile` (esbuild dev), `package` (esbuild production), `typecheck` (tsc --noEmit).
 - CI now runs `typecheck` step before esbuild compile.
@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Core mutations module** (`src/core/mutations.ts`) — Pure functions (`updateSection`, `addDecision`, `appendContent`, `addOpenQuestion`, `updateYamlMetadata`, `isPathContained`) with zero `vscode` imports.
 - **Prompt injection defence** — All vault content injected into LLM prompts is wrapped in `<vault_content>` / `</vault_content>` XML tags with a `DATA BOUNDARY` instruction in the system prompt.
 - **TOGAF metamodel validation** (`validateMetamodel`) — Warns when decisions don't target files via `[[wikilinks]]`, when impact analysis lacks quantitative language, and when principle metadata is incomplete.
-- **Backup auto-pruning** — `.achipilot/backups/` retains at most 10 backups per file; oldest are pruned automatically on write.
+- **Backup auto-pruning** — `.archipilot/backups/` retains at most 10 backups per file; oldest are pruned automatically on write.
 - **Windows path rejection** — `validateCommands()` rejects any command whose `file` field contains backslash paths.
 - **Extension walkthrough** — Four-step Getting Started walkthrough (Create Vault → Check Status → Analyze → Update) registered via `contributes.walkthroughs`.
 - **Enriched sample vault** — `examples/sample-vault/` expanded to 11 files with B1 (Business Architecture), C1 (Data Architecture), D1 (Technology Architecture), R1 (Requirements), and S1 (Security).
@@ -46,8 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Mutation audit log** — Every vault mutation is recorded as a JSONL entry in `.achipilot/audit.log` (timestamp, command, file, promptHash, user, success/failure).
-- **Pre-write file backup** — Before every overwrite, the original file is copied to `.achipilot/backups/{name}.{timestamp}.md`. Provides one-click rollback.
+- **Mutation audit log** — Every vault mutation is recorded as a JSONL entry in `.archipilot/audit.log` (timestamp, command, file, promptHash, user, success/failure).
+- **Pre-write file backup** — Before every overwrite, the original file is copied to `.archipilot/backups/{name}.{timestamp}.md`. Provides one-click rollback.
 - **Dry-run mode for `/update`** — Append `--dry-run` or `--preview` to your prompt to see what *would* change without writing anything.
 - **Confidence markers** — System prompts now require the LLM to prefix any extrapolation beyond vault data with "⚠️ Extrapolation:", reducing hallucination risk.
 - **Integration tests** — 8 fs-based integration tests covering template write/read, APPEND, CREATE, UPDATE_YAML, backup creation, and end-to-end parse→validate→apply. Total suite: 38 tests.

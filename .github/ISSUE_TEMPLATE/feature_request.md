@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest a new feature or command for AchiPilot
+about: Suggest a new feature or command for archipilot
 title: "[Feature] "
 labels: enhancement
 assignees: ''

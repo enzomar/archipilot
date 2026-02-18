@@ -520,7 +520,7 @@ function wrapInDrawioXml(
 ): string {
   const lines: string[] = [];
   lines.push('<?xml version="1.0" encoding="UTF-8"?>');
-  lines.push('<mxfile host="AchiPilot" modified="' + new Date().toISOString() + '" type="device">');
+  lines.push('<mxfile host="archipilot" modified="' + new Date().toISOString() + '" type="device">');
   lines.push(`  <diagram name="${escapeXml(pageName)}" id="${drawioId('diag')}">`);
   lines.push('    <mxGraphModel dx="1024" dy="768" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="' + Math.max(width, 800) + '" pageHeight="' + Math.max(height, 600) + '">');
   lines.push('      <root>');
@@ -542,7 +542,7 @@ function wrapMultiPageDrawioXml(
 ): string {
   const lines: string[] = [];
   lines.push('<?xml version="1.0" encoding="UTF-8"?>');
-  lines.push('<mxfile host="AchiPilot" modified="' + new Date().toISOString() + '" type="device">');
+  lines.push('<mxfile host="archipilot" modified="' + new Date().toISOString() + '" type="device">');
 
   for (const page of pages) {
     lines.push(`  <diagram name="${escapeXml(page.name)}" id="${drawioId('diag')}">`);

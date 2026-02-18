@@ -1,5 +1,5 @@
 /**
- * Type definitions for AchiPilot
+ * Type definitions for archipilot
  */
 
 /** Supported architecture commands for vault updates */

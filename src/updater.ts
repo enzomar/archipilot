@@ -280,7 +280,7 @@ export class FileUpdater {
   // ── Backup ───────────────────────────────────────────────────────
 
   /**
-   * Copy the original file to .achipilot/backups/{filename}.{timestamp}.md
+   * Copy the original file to .archipilot/backups/{filename}.{timestamp}.md
    * before overwriting. Silently skips if the file doesn't exist.
    */
   private async _backupFile(vaultPath: string, fileName: string): Promise<void> {
@@ -292,7 +292,7 @@ export class FileUpdater {
     }
 
     const ts = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupDir = vscode.Uri.file(path.join(vaultPath, '.achipilot', 'backups'));
+    const backupDir = vscode.Uri.file(path.join(vaultPath, '.archipilot', 'backups'));
     try {
       await vscode.workspace.fs.createDirectory(backupDir);
     } catch { /* ignore — may already exist */ }
@@ -305,7 +305,7 @@ export class FileUpdater {
       await vscode.workspace.fs.writeFile(backupUri, content);
     } catch {
       // Non-fatal — log but don't block the operation
-      console.warn(`AchiPilot: failed to backup ${fileName}`);
+      console.warn(`archipilot: failed to backup ${fileName}`);
     }
 
     // Prune old backups — keep only the most recent N per file
@@ -343,10 +343,10 @@ export class FileUpdater {
   // ── Audit log ────────────────────────────────────────────────────
 
   /**
-   * Append a JSON entry to .achipilot/audit.log for governance traceability.
+   * Append a JSON entry to .archipilot/audit.log for governance traceability.
    */
   private async _writeAuditEntry(vaultPath: string, entry: AuditEntry): Promise<void> {
-    const auditDir = vscode.Uri.file(path.join(vaultPath, '.achipilot'));
+    const auditDir = vscode.Uri.file(path.join(vaultPath, '.archipilot'));
     try {
       await vscode.workspace.fs.createDirectory(auditDir);
     } catch { /* ignore */ }

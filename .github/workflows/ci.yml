@@ -41,11 +41,11 @@ jobs:
       - name: Package VSIX
         if: matrix.node-version == 22
         run: npx @vscode/vsce package --no-dependencies
-        # Produces achipilot-*.vsix artifact
+        # Produces archipilot-*.vsix artifact
 
       - name: Upload VSIX artifact
         if: matrix.node-version == 22
         uses: actions/upload-artifact@v4
         with:
-          name: achipilot-vsix
+          name: archipilot-vsix
           path: '*.vsix'

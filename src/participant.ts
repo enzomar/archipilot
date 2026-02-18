@@ -43,7 +43,7 @@ export class ArchitectParticipant {
    */
   register(context: vscode.ExtensionContext): void {
     this._participant = vscode.chat.createChatParticipant(
-      'achipilot.architect',
+      'archipilot.architect',
       this._handler.bind(this)
     );
 
@@ -96,7 +96,7 @@ export class ArchitectParticipant {
     } catch {
       stream.markdown(
         '⚠️ **No architecture vault found.**\n\n' +
-          'Use `/switch` to select a vault folder, or set `achipilot.vaultPath` in settings.'
+          'Use `/switch` to select a vault folder, or set `archipilot.vaultPath` in settings.'
       );
       return {};
     }
@@ -256,7 +256,7 @@ export class ArchitectParticipant {
 
         // Step 3: Ask for confirmation
         const confirm = await vscode.window.showWarningMessage(
-          `AchiPilot: Apply ${validCommands.length} change(s) to your vault?`,
+          `archipilot: Apply ${validCommands.length} change(s) to your vault?`,
           { modal: true, detail: previews.map((p) => `• ${p.summary}`).join('\n') },
           'Apply All',
           'Cancel'
@@ -493,7 +493,7 @@ export class ArchitectParticipant {
     } catch {
       stream.markdown(
         '⚠️ **No architecture vault found.**\n\n' +
-          'Use `/switch` to select a vault folder, or set `achipilot.vaultPath` in settings.'
+          'Use `/switch` to select a vault folder, or set `archipilot.vaultPath` in settings.'
       );
       return {};
     }
@@ -591,7 +591,7 @@ export class ArchitectParticipant {
     } catch {
       stream.markdown(
         '⚠️ **No architecture vault found.**\n\n' +
-          'Use `/switch` to select a vault folder, or set `achipilot.vaultPath` in settings.'
+          'Use `/switch` to select a vault folder, or set `archipilot.vaultPath` in settings.'
       );
       return {};
     }
@@ -716,7 +716,7 @@ export class ArchitectParticipant {
     } catch {
       stream.markdown(
         '⚠️ **No architecture vault found.**\n\n' +
-          'Use `/switch` to select a vault folder, or set `achipilot.vaultPath` in settings.'
+          'Use `/switch` to select a vault folder, or set `archipilot.vaultPath` in settings.'
       );
       return {};
     }

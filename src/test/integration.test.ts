@@ -19,7 +19,7 @@ import { buildVaultTemplate } from '../vault-template.js';
 let tmpDir: string;
 
 function setup() {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'achipilot-test-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'archipilot-test-'));
 }
 
 function teardown() {
@@ -70,7 +70,7 @@ function updateYamlMetadata(vaultPath: string, fileName: string, fields: Record<
 function backupFile(vaultPath: string, fileName: string): void {
   const source = path.join(vaultPath, fileName);
   if (!fs.existsSync(source)) { return; }
-  const backupDir = path.join(vaultPath, '.achipilot', 'backups');
+  const backupDir = path.join(vaultPath, '.archipilot', 'backups');
   fs.mkdirSync(backupDir, { recursive: true });
   const ts = new Date().toISOString().replace(/[:.]/g, '-');
   const baseName = fileName.replace(/\.md$/, '');
@@ -190,7 +190,7 @@ describe('integration: pre-write backup', () => {
 
     backupFile(tmpDir, fileName);
 
-    const backupDir = path.join(tmpDir, '.achipilot', 'backups');
+    const backupDir = path.join(tmpDir, '.archipilot', 'backups');
     assert.ok(fs.existsSync(backupDir), 'Backup directory should exist');
 
     const backups = fs.readdirSync(backupDir);

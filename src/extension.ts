@@ -1,5 +1,5 @@
 /**
- * AchiPilot – Extension entry point.
+ * archipilot – Extension entry point.
  * Registers the @architect chat participant, commands, and status bar.
  */
 import * as vscode from 'vscode';
@@ -24,8 +24,8 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.StatusBarAlignment.Left,
     50
   );
-  statusBarItem.command = 'achipilot.switchVault';
-  statusBarItem.tooltip = 'AchiPilot – Click to switch architecture vault';
+  statusBarItem.command = 'archipilot.switchVault';
+  statusBarItem.tooltip = 'archipilot – Click to switch architecture vault';
   updateStatusBar(vaultManager);
   statusBarItem.show();
   context.subscriptions.push(statusBarItem);
@@ -35,18 +35,18 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // ── Commands ──
   context.subscriptions.push(
-    vscode.commands.registerCommand('achipilot.switchVault', async () => {
+    vscode.commands.registerCommand('archipilot.switchVault', async () => {
       const info = await vaultManager.promptSwitchVault();
       if (info) {
         vscode.window.showInformationMessage(
-          `AchiPilot: Switched to vault "${info.name}" (${info.fileCount} files)`
+          `archipilot: Switched to vault "${info.name}" (${info.fileCount} files)`
         );
       }
     })
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('achipilot.showStatus', async () => {
+    vscode.commands.registerCommand('archipilot.showStatus', async () => {
       try {
         const vaultPath = await vaultManager.autoDetectVault();
         if (vaultPath) {
@@ -59,37 +59,37 @@ export function activate(context: vscode.ExtensionContext): void {
           );
         } else {
           vscode.window.showWarningMessage(
-            'AchiPilot: No vault found. Use "AchiPilot: Switch Architecture Vault" to select one.'
+            'archipilot: No vault found. Use "archipilot: Switch Architecture Vault" to select one.'
           );
         }
       } catch (err) {
-        vscode.window.showErrorMessage(`AchiPilot: ${err}`);
+        vscode.window.showErrorMessage(`archipilot: ${err}`);
       }
     })
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'achipilot.applyCommand',
+      'archipilot.applyCommand',
       async (cmdJson: string) => {
         try {
           const cmd = JSON.parse(cmdJson);
           const result = await fileUpdater.applyCommand(cmd);
           if (result.success) {
-            vscode.window.showInformationMessage(`AchiPilot: ${result.message}`);
+            vscode.window.showInformationMessage(`archipilot: ${result.message}`);
             await vaultManager.loadVault();
           } else {
-            vscode.window.showErrorMessage(`AchiPilot: ${result.message}`);
+            vscode.window.showErrorMessage(`archipilot: ${result.message}`);
           }
         } catch (err) {
-          vscode.window.showErrorMessage(`AchiPilot: Failed to apply command – ${err}`);
+          vscode.window.showErrorMessage(`archipilot: Failed to apply command – ${err}`);
         }
       }
     )
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('achipilot.newVault', async () => {
+    vscode.commands.registerCommand('archipilot.newVault', async () => {
       // Trigger the /new flow via a chat message hint
       vscode.window.showInputBox({
         prompt: 'Enter a name for the new architecture project',
@@ -105,12 +105,12 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('achipilot.exportArchimate', async () => {
+    vscode.commands.registerCommand('archipilot.exportArchimate', async () => {
       try {
         const vaultPath = vaultManager.activeVaultPath || await vaultManager.autoDetectVault();
         if (!vaultPath) {
           vscode.window.showWarningMessage(
-            'AchiPilot: No vault found. Use "AchiPilot: Switch Architecture Vault" to select one.'
+            'archipilot: No vault found. Use "archipilot: Switch Architecture Vault" to select one.'
           );
           return;
         }
@@ -144,18 +144,18 @@ export function activate(context: vscode.ExtensionContext): void {
           });
         }
       } catch (err) {
-        vscode.window.showErrorMessage(`AchiPilot: Export failed – ${err}`);
+        vscode.window.showErrorMessage(`archipilot: Export failed – ${err}`);
       }
     })
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('achipilot.exportDrawio', async () => {
+    vscode.commands.registerCommand('archipilot.exportDrawio', async () => {
       try {
         const vaultPath = vaultManager.activeVaultPath || await vaultManager.autoDetectVault();
         if (!vaultPath) {
           vscode.window.showWarningMessage(
-            'AchiPilot: No vault found. Use "AchiPilot: Switch Architecture Vault" to select one.'
+            'archipilot: No vault found. Use "archipilot: Switch Architecture Vault" to select one.'
           );
           return;
         }
@@ -188,7 +188,7 @@ export function activate(context: vscode.ExtensionContext): void {
           });
         }
       } catch (err) {
-        vscode.window.showErrorMessage(`AchiPilot: Draw.io export failed – ${err}`);
+        vscode.window.showErrorMessage(`archipilot: Draw.io export failed – ${err}`);
       }
     })
   );
@@ -202,16 +202,16 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   });
 
-  console.log('AchiPilot activated');
+  console.log('archipilot activated');
 }
 
 function updateStatusBar(vaultManager: VaultManager): void {
   const vault = vaultManager.activeVaultPath;
   if (vault) {
     const name = vault.split('/').pop() || vault;
-    statusBarItem.text = `$(book) AchiPilot: ${name}`;
+    statusBarItem.text = `$(book) archipilot: ${name}`;
   } else {
-    statusBarItem.text = '$(book) AchiPilot: No vault';
+    statusBarItem.text = '$(book) archipilot: No vault';
   }
 }
 

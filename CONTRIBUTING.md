@@ -1,6 +1,6 @@
-# Contributing to AchiPilot
+# Contributing to archipilot
 
-Thank you for your interest in contributing to AchiPilot! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to archipilot! This document provides guidelines and instructions for contributing.
 
 ## Code of Conduct
 
@@ -10,7 +10,7 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 
 ### Reporting Bugs
 
-1. Check [existing issues](https://github.com/enzomar/achipilot/issues) to avoid duplicates.
+1. Check [existing issues](https://github.com/enzomar/archipilot/issues) to avoid duplicates.
 2. Use the **Bug Report** issue template.
 3. Include: VS Code version, extension version, steps to reproduce, expected vs. actual behavior.
 
@@ -32,8 +32,8 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 
 ```bash
 # Clone your fork
-git clone https://github.com/<your-username>/achipilot.git
-cd achipilot
+git clone https://github.com/<your-username>/archipilot.git
+cd archipilot
 
 # Install dependencies
 npm install
@@ -79,7 +79,7 @@ refactor: extract message builder from participant
 
 ## TOGAF Alignment
 
-AchiPilot follows TOGAF ADM phases. When contributing:
+archipilot follows TOGAF ADM phases. When contributing:
 
 - Map new features to the appropriate ADM phase.
 - Use the established file prefix convention (`P*`, `A*`–`H*`, `R*`, `X*`).

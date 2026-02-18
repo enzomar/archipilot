@@ -1,10 +1,10 @@
 # Example Vault
 
-This is a minimal TOGAF-aligned architecture vault you can use to try AchiPilot.
+This is a minimal TOGAF-aligned architecture vault you can use to try archipilot.
 
 ## Quick Start
 
-1. Open this workspace in VS Code with the AchiPilot extension active.
+1. Open this workspace in VS Code with the archipilot extension active.
 2. Open Copilot Chat (`Cmd+Shift+I`).
 3. Type `@architect /status` to see the vault overview.
 4. Try `@architect /decide Help me resolve AD-01` to get decision support.

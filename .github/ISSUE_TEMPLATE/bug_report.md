@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug in AchiPilot
+about: Report a bug in archipilot
 title: "[Bug] "
 labels: bug
 assignees: ''
@@ -24,12 +24,12 @@ What you expected to happen.
 
 ## Actual Behavior
 
-What actually happened. Include any error messages from the Output panel (`AchiPilot`).
+What actually happened. Include any error messages from the Output panel (`archipilot`).
 
 ## Environment
 
 - **VS Code version:** 
-- **AchiPilot version:** 
+- **archipilot version:** 
 - **GitHub Copilot version:** 
 - **OS:** 
 

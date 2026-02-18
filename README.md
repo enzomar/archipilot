@@ -1,20 +1,18 @@
-# AchiPilot – Enterprise Architecture Copilot
+# archipilot – Enterprise Architecture Copilot
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![CI](https://github.com/enzomar/achipilot/actions/workflows/ci.yml/badge.svg)](https://github.com/enzomar/achipilot/actions/workflows/ci.yml)
+[![CI](https://github.com/enzomar/archipilot/actions/workflows/ci.yml/badge.svg)](https://github.com/enzomar/archipilot/actions/workflows/ci.yml)
 [![VS Code](https://img.shields.io/badge/VS%20Code-1.93%2B-blue.svg)](https://code.visualstudio.com/)
-[![GitHub Issues](https://img.shields.io/github/issues/enzomar/achipilot)](https://github.com/enzomar/achipilot/issues)
-[![GitHub Stars](https://img.shields.io/github/stars/enzomar/achipilot)](https://github.com/enzomar/achipilot/stargazers)
+[![GitHub Issues](https://img.shields.io/github/issues/enzomar/archipilot)](https://github.com/enzomar/archipilot/issues)
+[![GitHub Stars](https://img.shields.io/github/stars/enzomar/archipilot)](https://github.com/enzomar/archipilot/stargazers)
 
 A VS Code Chat Participant extension that turns your Obsidian architecture vaults into an interactive, TOGAF-aligned Enterprise Architecture assistant — powered by GitHub Copilot.
 
 <p align="center">
-  <img src="media/demo-placeholder.svg" alt="AchiPilot Demo" width="800">
-  <br>
   <em>Ask architecture questions, resolve decisions, update vault documents — all from Copilot Chat.</em>
 </p>
 
-> **Note:** The image above is a placeholder. To record the real demo GIF, run the extension in the Extension Development Host and capture with a screen recorder (e.g., [Kap](https://getkap.co/) or [LICEcap](https://www.cockos.com/licecap/)). Save the recording as `media/demo.gif` and update the `<img src>` above.
+> **Tip:** To add a demo image, capture a screen recording in the Extension Development Host (e.g., with [Kap](https://getkap.co/) or [LICEcap](https://www.cockos.com/licecap/)), save as `media/demo.png` or `media/demo.gif`, and add `<img src="media/demo.png">` here.
 
 ## Features
 
@@ -45,8 +43,8 @@ A VS Code Chat Participant extension that turns your Obsidian architecture vault
 
 | Command | Description |
 |---------|-------------|
-| `AchiPilot: Export Vault to ArchiMate (XML)` | Quick-export the active vault without opening chat |
-| `AchiPilot: Export Vault to Draw.io` | Quick-export As-Is / Target / Migration diagrams without opening chat |
+| `archipilot: Export Vault to ArchiMate (XML)` | Quick-export the active vault without opening chat |
+| `archipilot: Export Vault to Draw.io` | Quick-export As-Is / Target / Migration diagrams without opening chat |
 
 ## Usage Examples
 
@@ -302,7 +300,7 @@ When updating documents, the agent uses structured commands internally:
 
 ```bash
 # Clone and build
-cd achipilot
+cd archipilot
 npm install
 npm run compile
 ```
@@ -317,8 +315,8 @@ npm run compile
 ### Switching Projects
 
 - Type `@architect /switch` in chat, or
-- Click the status bar item "AchiPilot: …", or
-- Run command palette → "AchiPilot: Switch Architecture Vault"
+- Click the status bar item "archipilot: …", or
+- Run command palette → "archipilot: Switch Architecture Vault"
 
 ## Export Output Structure
 
@@ -487,8 +485,8 @@ The `@architect` agent reads this metadata to understand document maturity and o
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `achipilot.vaultPath` | `""` | Path to the active vault folder (auto-detected if empty) |
-| `achipilot.projectsRoot` | `"architectures"` | Folder (relative to workspace root) where `/new` creates vaults and where discovery scans |
+| `archipilot.vaultPath` | `""` | Path to the active vault folder (auto-detected if empty) |
+| `archipilot.projectsRoot` | `"architectures"` | Folder (relative to workspace root) where `/new` creates vaults and where discovery scans |
 
 ## Architecture
 
@@ -520,8 +518,8 @@ src/
 | **Diff preview** | Every `/update` shows a visual diff before applying changes |
 | **Confirmation dialog** | "Apply All" / "Cancel" modal before any write |
 | **Dry-run mode** | Append `--dry-run` or `--preview` to see changes without writing |
-| **File backup** | Pre-write copy saved to `.achipilot/backups/{name}.{timestamp}.md` |
-| **Audit log** | Every mutation logged to `.achipilot/audit.log` (JSONL) |
+| **File backup** | Pre-write copy saved to `.archipilot/backups/{name}.{timestamp}.md` |
+| **Audit log** | Every mutation logged to `.archipilot/audit.log` (JSONL) |
 | **Schema validation** | Commands validated for required fields, safe paths, known types |
 | **Confidence markers** | LLM prefixes extrapolations with ⚠️ to reduce hallucination risk |
 

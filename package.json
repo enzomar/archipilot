@@ -1,9 +1,10 @@
 {
-  "name": "achipilot",
-  "displayName": "AchiPilot – Enterprise Architecture Copilot",
+  "name": "archipilot",
+  "displayName": "archipilot – Enterprise Architecture Copilot",
   "description": "TOGAF-aligned Enterprise Architecture assistant that uses Obsidian vaults as structured context, powered by GitHub Copilot.",
   "version": "0.5.0-beta",
   "publisher": "enzomar",
+  "icon": "media/icon.png",
   "author": {
     "name": "Vincenzo Marafioti",
     "url": "https://github.com/enzomar"
@@ -11,12 +12,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/enzomar/achipilot.git"
+    "url": "https://github.com/enzomar/archipilot.git"
   },
   "bugs": {
-    "url": "https://github.com/enzomar/achipilot/issues"
+    "url": "https://github.com/enzomar/archipilot/issues"
   },
-  "homepage": "https://github.com/enzomar/achipilot#readme",
+  "homepage": "https://github.com/enzomar/archipilot#readme",
   "keywords": [
     "togaf",
     "enterprise-architecture",
@@ -38,8 +39,8 @@
   "contributes": {
     "chatParticipants": [
       {
-        "id": "achipilot.architect",
-        "fullName": "AchiPilot",
+        "id": "archipilot.architect",
+        "fullName": "archipilot",
         "name": "architect",
         "description": "Enterprise Architecture Copilot – TOGAF-aligned assistant for Obsidian architecture vaults",
         "isSticky": true,
@@ -97,39 +98,39 @@
     ],
     "commands": [
       {
-        "command": "achipilot.switchVault",
-        "title": "AchiPilot: Switch Architecture Vault"
+        "command": "archipilot.switchVault",
+        "title": "archipilot: Switch Architecture Vault"
       },
       {
-        "command": "achipilot.showStatus",
-        "title": "AchiPilot: Show Vault Status"
+        "command": "archipilot.showStatus",
+        "title": "archipilot: Show Vault Status"
       },
       {
-        "command": "achipilot.applyCommand",
-        "title": "AchiPilot: Apply Architecture Command"
+        "command": "archipilot.applyCommand",
+        "title": "archipilot: Apply Architecture Command"
       },
       {
-        "command": "achipilot.newVault",
-        "title": "AchiPilot: Create New Architecture Vault"
+        "command": "archipilot.newVault",
+        "title": "archipilot: Create New Architecture Vault"
       },
       {
-        "command": "achipilot.exportArchimate",
-        "title": "AchiPilot: Export Vault to ArchiMate (XML)"
+        "command": "archipilot.exportArchimate",
+        "title": "archipilot: Export Vault to ArchiMate (XML)"
       },
       {
-        "command": "achipilot.exportDrawio",
-        "title": "AchiPilot: Export Vault to Draw.io (As-Is / Target / Migration)"
+        "command": "archipilot.exportDrawio",
+        "title": "archipilot: Export Vault to Draw.io (As-Is / Target / Migration)"
       }
     ],
     "configuration": {
-      "title": "AchiPilot",
+      "title": "archipilot",
       "properties": {
-        "achipilot.vaultPath": {
+        "archipilot.vaultPath": {
           "type": "string",
           "default": "",
           "description": "Path to the active Obsidian architecture vault folder. Leave empty to auto-detect from workspace."
         },
-        "achipilot.projectsRoot": {
+        "archipilot.projectsRoot": {
           "type": "string",
           "default": "architectures",
           "description": "Folder name (relative to workspace root) where architecture projects are created and discovered. The /new command creates vaults inside this folder."
@@ -138,14 +139,14 @@
     },
     "walkthroughs": [
       {
-        "id": "achipilot.gettingStarted",
-        "title": "Get Started with AchiPilot",
+        "id": "archipilot.gettingStarted",
+        "title": "Get Started with archipilot",
         "description": "Set up your TOGAF-aligned architecture vault and start working with your Enterprise Architecture Copilot.",
         "steps": [
           {
             "id": "createVault",
             "title": "Create an Architecture Vault",
-            "description": "Open Copilot Chat and type **@architect /new MyProject** to scaffold a TOGAF-aligned vault with 27 template files.\n\n[Create a vault](command:achipilot.newVault)",
+            "description": "Open Copilot Chat and type **@architect /new MyProject** to scaffold a TOGAF-aligned vault with 27 template files.\n\n[Create a vault](command:archipilot.newVault)",
             "media": {
               "markdown": "media/walkthrough-create.md"
             }
@@ -153,7 +154,7 @@
           {
             "id": "checkStatus",
             "title": "Check Vault Status",
-            "description": "Type **@architect /status** in Copilot Chat to see your vault overview — file counts, decision statuses, and open questions.\n\n[Show status](command:achipilot.showStatus)",
+            "description": "Type **@architect /status** in Copilot Chat to see your vault overview — file counts, decision statuses, and open questions.\n\n[Show status](command:archipilot.showStatus)",
             "media": {
               "markdown": "media/walkthrough-status.md"
             }
@@ -169,7 +170,7 @@
           {
             "id": "updateVault",
             "title": "Update Your Vault",
-            "description": "Use **@architect /update** to add decisions, update sections, or modify metadata. AchiPilot shows a diff preview before applying changes.",
+            "description": "Use **@architect /update** to add decisions, update sections, or modify metadata. archipilot shows a diff preview before applying changes.",
             "media": {
               "markdown": "media/walkthrough-update.md"
             }
@@ -192,6 +193,7 @@
     "@types/vscode": "^1.93.0",
     "@typescript-eslint/eslint-plugin": "^8.56.0",
     "@typescript-eslint/parser": "^8.56.0",
+    "@vscode/vsce": "^3.7.1",
     "esbuild": "^0.27.3",
     "eslint": "^9.39.2",
     "tsx": "^4.21.0",
