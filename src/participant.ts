@@ -292,6 +292,10 @@ export class ArchitectParticipant {
           }
         }
 
+        // Refresh sidebar views to reflect mutations
+        await this._vaultManager.loadVault();
+        vscode.commands.executeCommand('archipilot.refreshSidebar');
+
         stream.markdown('\n\n> 💡 Changes applied. Use `Ctrl+Z` / `Cmd+Z` in each file to undo.');
       }
     }
