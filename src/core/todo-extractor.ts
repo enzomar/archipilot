@@ -149,7 +149,8 @@ function extractOpenDecisions(files: VaultFile[]): TodoItem[] {
     const headerMatch = block.match(/^## (AD-\d+)\s*[—–-]\s*(.+)/m);
     if (!headerMatch) continue;
 
-    const id = headerMatch[1]; or Proposed
+    const id = headerMatch[1];
+    const title = headerMatch[2].trim();
     const statusMatch = block.match(/\*\*Status\*\*\s*\|\s*(.*?)\s*\|/);
     if (!statusMatch) continue;
     const status = statusMatch[1].trim();
@@ -159,7 +160,7 @@ function extractOpenDecisions(files: VaultFile[]): TodoItem[] {
     const owner = ownerMatch ? ownerMatch[1].trim() : 'TBD';
 
     const priorityMatch = block.match(/\*\*Priority\*\*\s*\|\s*(.*?)\s*\|/);
-    const priority = priorityMatch ? severityToPriority(priorityMatch[1]) : 'medium'; // Default to medium for proposed
+    const priority = priorityMatch ? severityToPriority(priorityMatch[1]) : 'medium';
 
     const phaseMatch = block.match(/\*\*Phase\*\*\s*\|\s*(.*?)\s*\|/);
     let phase: TogafPhase = 'Cross-phase';
@@ -171,10 +172,7 @@ function extractOpenDecisions(files: VaultFile[]): TodoItem[] {
     items.push({
       id,
       title: `${status.includes('Proposed') ? 'Review Proposed' : 'Decide'}: ${title}`,
-      category: status.includes('Proposed') ? 'decision-pending' ({
-      id,
-      title: `Decide: ${title}`,
-      category: 'decision',
+      category: status.includes('Proposed') ? 'decision-pending' : 'decision',
       priority,
       phase,
       sourceFile: file.name,
@@ -514,7 +512,9 @@ function extractUnassignedOwnership(files: VaultFile[]): TodoItem[] {
   }
 
   return items;
-}** Identify files with no incoming or outgoing links. */
+}
+
+/** Identify files with no incoming or outgoing links. */
 function extractOrphanedEntities(files: VaultFile[]): TodoItem[] {
   const items: TodoItem[] = [];
   const linkValues = new Set<string>();
