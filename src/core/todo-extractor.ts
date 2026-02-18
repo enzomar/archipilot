@@ -20,7 +20,10 @@
 
 export type TodoCategory =
   | 'decision'
+  | 'decision-pending'
   | 'risk'
+  | 'risk-no-owner'
+  | 'orphaned-entity'
   | 'question'
   | 'work-package'
   | 'milestone'
@@ -146,20 +149,17 @@ function extractOpenDecisions(files: VaultFile[]): TodoItem[] {
     const headerMatch = block.match(/^## (AD-\d+)\s*[—–-]\s*(.+)/m);
     if (!headerMatch) continue;
 
-    const id = headerMatch[1];
-    const title = headerMatch[2].trim();
-
-    // Check if status is Open
+    const id = headerMatch[1]; or Proposed
     const statusMatch = block.match(/\*\*Status\*\*\s*\|\s*(.*?)\s*\|/);
     if (!statusMatch) continue;
     const status = statusMatch[1].trim();
-    if (!status.includes('Open')) continue;
+    if (!status.includes('Open') && !status.includes('Proposed')) continue;
 
     const ownerMatch = block.match(/\*\*Owner\*\*\s*\|\s*(.*?)\s*\|/);
     const owner = ownerMatch ? ownerMatch[1].trim() : 'TBD';
 
     const priorityMatch = block.match(/\*\*Priority\*\*\s*\|\s*(.*?)\s*\|/);
-    const priority = priorityMatch ? severityToPriority(priorityMatch[1]) : 'high';
+    const priority = priorityMatch ? severityToPriority(priorityMatch[1]) : 'medium'; // Default to medium for proposed
 
     const phaseMatch = block.match(/\*\*Phase\*\*\s*\|\s*(.*?)\s*\|/);
     let phase: TogafPhase = 'Cross-phase';
@@ -169,6 +169,9 @@ function extractOpenDecisions(files: VaultFile[]): TodoItem[] {
     }
 
     items.push({
+      id,
+      title: `${status.includes('Proposed') ? 'Review Proposed' : 'Decide'}: ${title}`,
+      category: status.includes('Proposed') ? 'decision-pending' ({
       id,
       title: `Decide: ${title}`,
       category: 'decision',
@@ -204,10 +207,12 @@ function extractOpenRisks(files: VaultFile[]): TodoItem[] {
 
     const riskName = risk.replace(/\*\*/g, '').replace(/\s*—.*/, '').trim();
 
+    const isMissingOwner = !owner || owner.trim() === '' || owner.trim() === 'TBD';
+
     items.push({
       id,
       title: `Mitigate risk: ${riskName}`,
-      category: 'risk',
+      category: isMissingOwner ? 'risk-no-owner' : 'risk',
       priority: severityToPriority(severity),
       phase: 'Cross-phase',
       sourceFile: file.name,
@@ -509,6 +514,55 @@ function extractUnassignedOwnership(files: VaultFile[]): TodoItem[] {
   }
 
   return items;
+}** Identify files with no incoming or outgoing links. */
+function extractOrphanedEntities(files: VaultFile[]): TodoItem[] {
+  const items: TodoItem[] = [];
+  const linkValues = new Set<string>();
+  const fileMap = new Map<string, VaultFile>();
+
+  // 1. Build map and collect all outgoing links
+  for (const file of files) {
+    const baseName = file.name.replace('.md', '');
+    fileMap.set(baseName, file);
+
+    const regex = /\[\[(.*?)\]\]/g;
+    let match;
+    while ((match = regex.exec(file.content)) !== null) {
+      let link = match[1].split('|')[0];
+      link = link.split('#')[0];
+      linkValues.add(link);
+    }
+  }
+
+  // 2. Check each file for orphans
+  for (const file of files) {
+    const baseName = file.name.replace('.md', '');
+    
+    // Ignore meta files
+    if (baseName.startsWith('00_') || baseName.startsWith('X')) continue;
+
+    // Has outgoing links?
+    const hasOutgoing = /\[\[.*?\]\]/.test(file.content);
+    
+    // Has incoming links?
+    // Note: linkValues contains *targets*. If baseName is in linkValues, it is referenced.
+    const hasIncoming = linkValues.has(baseName);
+
+    if (!hasOutgoing && !hasIncoming) {
+       items.push({
+        id: baseName,
+        title: `Orphaned: ${baseName}`,
+        category: 'orphaned-entity',
+        priority: 'low',
+        phase: prefixToPhase(file.name),
+        sourceFile: file.name,
+        owner: yamlValue(file.content, 'owner') || 'TBD',
+        detail: 'No incoming or outgoing links found'
+      });
+    }
+  }
+
+  return items;
 }
 
 // ── Main public API ────────────────────────────────────────────────
@@ -528,6 +582,7 @@ export function extractTodos(files: VaultFile[]): TodoSummary {
     ...extractChangeRequests(files),
     ...extractDocumentMaturity(files),
     ...extractUnassignedOwnership(files),
+    ...extractOrphanedEntities(files),
   ];
 
   // Sort by priority (critical > high > medium > low)
@@ -598,7 +653,10 @@ export function formatTodoMarkdown(summary: TodoSummary): string {
   // ── By category ──
   const categoryLabels: Record<TodoCategory, string> = {
     decision: '🔷 Open Decisions',
+    'decision-pending': '💡 Pending Decisions',
     risk: '⚠️ Open Risks',
+    'risk-no-owner': '🚨 Risks without Owners',
+    'orphaned-entity': '🕸 Orphaned Entities',
     question: '❓ Open Questions',
     'work-package': '📦 Pending Work Packages',
     milestone: '🏁 Pending Milestones',
@@ -611,7 +669,10 @@ export function formatTodoMarkdown(summary: TodoSummary): string {
 
   const categoryOrder: TodoCategory[] = [
     'decision',
+    'decision-pending',
     'risk',
+    'risk-no-owner',
+    'orphaned-entity',
     'work-package',
     'milestone',
     'requirement',

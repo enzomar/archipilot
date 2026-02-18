@@ -90,6 +90,21 @@ export class ArchitectParticipant {
       return this._handleTodo(request, chatContext, stream, token);
     }
 
+    // ── Handle /adr command ──
+    if (request.command === 'adr') {
+      return this._handleADR(request, stream);
+    }
+
+    // ── Handle /diagram command ──
+    if (request.command === 'diagram') {
+      return this._handleDiagram(stream);
+    }
+
+    // ── Handle /graph command ──
+    if (request.command === 'graph') {
+      return this._handleGraph(stream);
+    }
+
     // ── Ensure vault is loaded ──
     try {
       await this._ensureVault(stream);
@@ -330,6 +345,9 @@ export class ArchitectParticipant {
           `- \`/timeline\` – delivery timeline\n` +
           `- \`/drawio\` – Draw.io export (As-Is / Target / Migration)\n` +
           `- \`/todo\` – TOGAF action items\n` +
+          `- \`/adr <title>\` – record a new Architecture Decision\n` +
+          `- \`/diagram\` – context diagram for the active file\n` +
+          `- \`/graph\` – full vault dependency graph\n` +
           `- \`/new\` – create empty vault`
       );
     } else {
@@ -766,6 +784,192 @@ export class ArchitectParticipant {
     }
 
     stream.markdown(`\n\n---\n*Vault: ${vaultInfo.name} (${vaultInfo.fileCount} files) — TOGAF TODO Scan*`);
+
+    return {};
+  }
+
+  /**
+   * Handle /adr – record a new Architecture Decision Record.
+   */
+  private async _handleADR(
+    request: vscode.ChatRequest,
+    stream: vscode.ChatResponseStream
+  ): Promise<vscode.ChatResult> {
+    const title = request.prompt.trim();
+    if (!title) {
+      stream.markdown(
+        '⚠️ **No decision title provided.**\n\n' +
+        'Usage: `@architect /adr Use PostgreSQL for transactional data`'
+      );
+      return {};
+    }
+
+    try {
+      await this._ensureVault(stream);
+    } catch {
+      stream.markdown('⚠️ **No architecture vault found.**\n\nUse `/switch` to select a vault folder.');
+      return {};
+    }
+
+    stream.progress('Recording Architecture Decision...');
+    const vaultPath = this._vaultManager.activeVaultPath!;
+    const decisionLogUri = vscode.Uri.file(`${vaultPath}/X1_ADR_Decision_Log.md`);
+
+    let content = '';
+    try {
+      const bytes = await vscode.workspace.fs.readFile(decisionLogUri);
+      content = Buffer.from(bytes).toString('utf-8');
+    } catch {
+      content = `---\ntype: decision-log\nstatus: draft\n---\n\n# Architecture Decision Log\n\n`;
+    }
+
+    const matches = content.match(/AD-(\d+)/g);
+    let nextId = 1;
+    if (matches) {
+      const ids = matches.map((m) => parseInt(m.split('-')[1], 10));
+      nextId = Math.max(...ids) + 1;
+    }
+    const idString = `AD-${String(nextId).padStart(2, '0')}`;
+    const date = new Date().toISOString().split('T')[0];
+
+    const newEntry =
+      `\n## ${idString} — ${title}\n\n` +
+      `| Field | Value |\n|-------|-------|\n` +
+      `| **Status** | 🟡 Proposed |\n` +
+      `| **Date Raised** | ${date} |\n` +
+      `| **Owner** | TBD |\n` +
+      `| **Phase** | Cross-phase |\n\n` +
+      `### Context\n_Why do we need to make this decision?_\n\n` +
+      `### Options\n- **Option A**\n- **Option B**\n\n` +
+      `### Decision\n_Pending..._\n`;
+
+    await vscode.workspace.fs.writeFile(
+      decisionLogUri,
+      Buffer.from(content + newEntry, 'utf-8')
+    );
+
+    this._vaultManager.invalidateCache();
+    vscode.commands.executeCommand('archipilot.refreshSidebar');
+
+    stream.markdown(
+      `✅ **Recorded:** \`${idString}\` — ${title}\n\n` +
+      `| Field | Value |\n|-------|-------|\n` +
+      `| **ID** | \`${idString}\` |\n` +
+      `| **Status** | 🟡 Proposed |\n` +
+      `| **Date** | ${date} |\n\n` +
+      `Added to \`X1_ADR_Decision_Log.md\`. Open it to fill in context, options, and final decision.\n\n` +
+      `> 💡 Use \`@architect /decide ${idString} ${title}\` to get AI analysis on this decision.`
+    );
+    stream.anchor(decisionLogUri, 'X1_ADR_Decision_Log.md');
+
+    return {};
+  }
+
+  /**
+   * Handle /diagram – generate a Mermaid context diagram from the active file's WikiLinks.
+   */
+  private async _handleDiagram(
+    stream: vscode.ChatResponseStream
+  ): Promise<vscode.ChatResult> {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || !editor.document.fileName.endsWith('.md')) {
+      stream.markdown(
+        '⚠️ **No Markdown file active.**\n\n' +
+        'Open a vault Markdown file in the editor, then run `@architect /diagram`.'
+      );
+      return {};
+    }
+
+    stream.progress('Scanning file for WikiLinks...');
+    const text = editor.document.getText();
+    const fileName = editor.document.fileName.split('/').pop()?.replace(/\.md$/, '') || 'Current';
+
+    const regex = /\[\[(.*?)\]\]/g;
+    const links = new Set<string>();
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      const link = match[1].split('|')[0].split('#')[0].trim();
+      if (link && link !== fileName) { links.add(link); }
+    }
+
+    if (links.size === 0) {
+      stream.markdown(
+        `ℹ️ **No \`[[WikiLinks]]\` found** in \`${fileName}.md\`.\n\n` +
+        'Add links to other vault files and try again.'
+      );
+      return {};
+    }
+
+    const safeId = (s: string) => `n_${s.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    let mermaid = `flowchart LR\n    ${safeId(fileName)}["${fileName}"]\n    style ${safeId(fileName)} fill:#6366f1,color:#fff,stroke:#4338ca\n`;
+    links.forEach((link) => {
+      mermaid += `    ${safeId(fileName)} --> ${safeId(link)}["${link}"]\n`;
+    });
+
+    const insertText = `\n\n## Context Diagram\n\n\`\`\`mermaid\n${mermaid}\`\`\`\n`;
+    await editor.edit((eb) => {
+      eb.insert(editor.document.positionAt(text.length), insertText);
+    });
+
+    stream.markdown(
+      `✅ **Context diagram generated for \`${fileName}\`** (${links.size} connections)\n\n` +
+      `\`\`\`mermaid\n${mermaid}\`\`\`\n\n` +
+      `The diagram has also been inserted at the bottom of \`${fileName}.md\`.`
+    );
+
+    return {};
+  }
+
+  /**
+   * Handle /graph – generate a full vault dependency graph as Mermaid.
+   */
+  private async _handleGraph(
+    stream: vscode.ChatResponseStream
+  ): Promise<vscode.ChatResult> {
+    try {
+      await this._ensureVault(stream);
+    } catch {
+      stream.markdown('⚠️ **No architecture vault found.**\n\nUse `/switch` to select a vault folder.');
+      return {};
+    }
+
+    stream.progress('Building vault dependency graph...');
+    const vaultInfo = await this._vaultManager.loadVault();
+    const vaultPath = this._vaultManager.activeVaultPath!;
+
+    const safeId = (s: string) => `n_${s.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const allNames = new Set(vaultInfo.files.map((f) => f.name.replace(/\.md$/, '')));
+    const edgeSet = new Set<string>();
+
+    for (const file of vaultInfo.files) {
+      const from = file.name.replace(/\.md$/, '');
+      const regex = /\[\[(.*?)\]\]/g;
+      let match;
+      while ((match = regex.exec(file.content)) !== null) {
+        const to = match[1].split('|')[0].split('#')[0].trim();
+        if (to && to !== from && allNames.has(to)) {
+          edgeSet.add(`    ${safeId(from)} --> ${safeId(to)}`);
+        }
+      }
+    }
+
+    const nodeDecls = Array.from(allNames)
+      .map((n) => `    ${safeId(n)}["${n}"]`)
+      .join('\n');
+    const mermaid = `flowchart LR\n${nodeDecls}\n${[...edgeSet].join('\n')}`;
+
+    const graphUri = vscode.Uri.file(`${vaultPath}/Vault-Graph.mermaid`);
+    await vscode.workspace.fs.writeFile(graphUri, Buffer.from(mermaid, 'utf-8'));
+
+    const preview = mermaid.length > 2000 ? mermaid.slice(0, 2000) + '\n    ... (truncated for chat)' : mermaid;
+
+    stream.markdown(
+      `✅ **Vault Graph generated** — ${vaultInfo.fileCount} nodes, ${edgeSet.size} edges\n\n` +
+      `Saved to \`Vault-Graph.mermaid\` in your vault root.\n\n` +
+      `> 💡 Install the **Mermaid Preview** extension to render this file visually.\n\n` +
+      `\`\`\`mermaid\n${preview}\n\`\`\``
+    );
+    stream.anchor(graphUri, 'Vault-Graph.mermaid');
 
     return {};
   }

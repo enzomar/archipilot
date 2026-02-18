@@ -123,6 +123,18 @@
           {
             "name": "todo",
             "description": "List next TOGAF action items: open decisions, risks, questions, work packages, and more"
+          },
+          {
+            "name": "adr",
+            "description": "Record a new Architecture Decision — e.g. /adr Use PostgreSQL for transactional data"
+          },
+          {
+            "name": "diagram",
+            "description": "Generate a Mermaid context diagram from the active file's [[WikiLinks]]"
+          },
+          {
+            "name": "graph",
+            "description": "Visualize the entire vault as a full dependency graph (Mermaid flowchart)"
           }
         ]
       }
@@ -143,6 +155,18 @@
       {
         "command": "archipilot.newVault",
         "title": "archipilot: Create New Architecture Vault"
+      },
+      {
+        "command": "archipilot.recordDecision",
+        "title": "archipilot: Record Decision (ADR)"
+      },
+      {
+        "command": "archipilot.generateContextDiagram",
+        "title": "archipilot: Generate Context Diagram"
+      },
+      {
+        "command": "archipilot.showGraph",
+        "title": "archipilot: Visualize Vault Graph"
       },
       {
         "command": "archipilot.exportArchimate",

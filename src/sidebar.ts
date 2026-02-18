@@ -342,7 +342,10 @@ export class QuickActionsProvider implements vscode.TreeDataProvider<SidebarItem
 
 const CATEGORY_LABELS: Record<TodoCategory, { label: string; icon: string }> = {
   'decision':           { label: 'Open Decisions',          icon: 'law' },
+  'decision-pending':   { label: 'Proposed Decisions',      icon: 'lightbulb' },
   'risk':               { label: 'Open Risks',              icon: 'warning' },
+  'risk-no-owner':      { label: 'Risks without Owners',    icon: 'shield' },
+  'orphaned-entity':    { label: 'Orphaned Entities',       icon: 'link' },
   'question':           { label: 'Open Questions',          icon: 'question' },
   'work-package':       { label: 'Pending Work Packages',   icon: 'package' },
   'milestone':          { label: 'Upcoming Milestones',     icon: 'milestone' },

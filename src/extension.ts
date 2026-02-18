@@ -8,6 +8,7 @@ import { FileUpdater } from './updater.js';
 import { ArchitectParticipant } from './participant.js';
 import { exportToArchimate, extractModel, generateExportSummary, formatSummaryMarkdown, exportToDrawio, formatDrawioSummaryMarkdown } from './core/index.js';
 import { VaultExplorerProvider, QuickActionsProvider, ArchitectureHealthProvider } from './sidebar.js';
+import { registerSmartADRCommand, registerAutoDiagramCommand, registerGraphViewCommand } from './features.js';
 
 let statusBarItem: vscode.StatusBarItem;
 
@@ -19,6 +20,11 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // ── Register chat participant ──
   participant.register(context);
+
+  // ── Register Feature Commands ──
+  registerSmartADRCommand(context, vaultManager);
+  registerAutoDiagramCommand(context);
+  registerGraphViewCommand(context, vaultManager);
 
   // ── Status bar ──
   statusBarItem = vscode.window.createStatusBarItem(

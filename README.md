@@ -36,6 +36,9 @@ A VS Code Chat Participant extension that turns your Obsidian architecture vault
 | `@architect /archimate` | Export vault to ArchiMate 3.2 Open Exchange XML |
 | `@architect /drawio` | Export vault to Draw.io diagrams (As-Is, Target, Migration) |
 | `@architect /todo` | List next TOGAF action items from the vault |
+| `@architect /adr <title>` | Record a new Architecture Decision in the decision log |
+| `@architect /diagram` | Generate a Mermaid context diagram for the active file |
+| `@architect /graph` | Visualize the full vault as a dependency graph |
 | `@architect /new` | Scaffold a new empty TOGAF vault |
 
 ### Palette Commands
@@ -44,10 +47,86 @@ A VS Code Chat Participant extension that turns your Obsidian architecture vault
 |---------|-------------|
 | `archipilot: Export Vault to ArchiMate (XML)` | Quick-export the active vault without opening chat |
 | `archipilot: Export Vault to Draw.io` | Quick-export As-Is / Target / Migration diagrams without opening chat |
+| `archipilot: Record Architecture Decision` | Open ADR input box without using chat |
+| `archipilot: Generate Context Diagram` | Insert a Mermaid diagram for the active file without using chat |
+| `archipilot: Show Vault Graph` | Generate and open `Vault-Graph.mermaid` without using chat |
+| `archipilot: Open in Split Preview` | Open a vault file side-by-side with its Markdown preview (sidebar icon) |
 
 ## Usage Examples
 
 Below are practical examples for every command. Just type these in Copilot Chat — the agent reads your vault and responds accordingly.
+
+### `@architect /adr` — Record an Architecture Decision
+
+Create a new Architecture Decision Record (ADR) entry directly from chat — no need to open or edit `X1_ADR_Decision_Log.md` manually.
+
+```
+@architect /adr Use PostgreSQL for transactional data
+@architect /adr Adopt an API Gateway as the single entry point for all external traffic
+@architect /adr Self-host the LLM instead of using a cloud API
+@architect /adr Defer MCP integration to Phase 5
+```
+
+**What it does:**
+1. Determines the next available ADR ID (e.g. `AD-05`)
+2. Appends a structured entry to `X1_ADR_Decision_Log.md` with Status: `🟡 Proposed`, date, and template sections (Context / Options / Decision)
+3. Returns a confirmation with the new ID and a ready-to-use follow-up prompt
+4. Refreshes the Architecture Health sidebar to reflect the new pending decision
+
+> 💡 Combine with `/decide`: after recording, use `@architect /decide AD-05 Use PostgreSQL` to get AI-driven analysis of options.
+
+---
+
+### `@architect /diagram` — Context Diagram for Active File
+
+Generate a Mermaid context diagram from the `[[WikiLinks]]` in the file currently open in your editor.
+
+```
+@architect /diagram
+```
+
+**What it does:**
+1. Reads the active Markdown file
+2. Extracts all `[[WikiLinks]]` (ignoring aliases and anchors)
+3. Generates a `flowchart LR` Mermaid diagram with the current file at the centre
+4. Inserts the diagram block at the bottom of the file under a `## Context Diagram` heading
+5. Renders a preview in the chat response
+
+**Example output (for `C1_Application_Architecture.md`):**
+```mermaid
+flowchart LR
+    n_C1_Application_Architecture["C1_Application_Architecture"]
+    style n_C1_Application_Architecture fill:#6366f1,color:#fff,stroke:#4338ca
+    n_C1_Application_Architecture --> n_E2_Integration_Strategy["E2_Integration_Strategy"]
+    n_C1_Application_Architecture --> n_D1_Technology_Architecture["D1_Technology_Architecture"]
+    n_C1_Application_Architecture --> n_X1_ADR_Decision_Log["X1_ADR_Decision_Log"]
+```
+
+> 💡 Open any vault file in the editor, then run `/diagram` — no extra arguments needed.
+
+---
+
+### `@architect /graph` — Full Vault Dependency Graph
+
+Visualize the entire vault as a Mermaid dependency graph — every file as a node, every `[[WikiLink]]` as an edge.
+
+```
+@architect /graph
+```
+
+**What it does:**
+1. Scans all markdown files in the active vault
+2. Builds a node + edge list from all `[[WikiLinks]]` between vault files
+3. Generates a `flowchart LR` Mermaid diagram
+4. Saves the output to `Vault-Graph.mermaid` in your vault root
+5. Previews the graph (truncated) in chat and provides a link to the saved file
+
+**Tips:**
+- Install the [Mermaid Preview](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid) extension to render `Vault-Graph.mermaid` visually
+- Files with many outgoing links indicate **highly-coupled artifacts** — review for traceability
+- Files with zero incoming links are **orphaned** — the Architecture Health view flags these too
+
+---
 
 ### `@architect /archimate` — ArchiMate Export
 
@@ -288,6 +367,36 @@ When updating documents, the agent uses structured commands internally:
 - `CREATE_FILE` – Create new vault documents
 - `UPDATE_YAML_METADATA` – Modify front-matter fields
 
+## Sidebar Features
+
+The archipilot sidebar (click the `AP` icon in the Activity Bar) provides three views:
+
+### Vault Explorer
+Browses vault files grouped by TOGAF ADM phase. Each file item has three inline action icons:
+
+| Icon | Action |
+|------|--------|
+| 📄 | Open the file in the editor |
+| 💬 | Ask Copilot to analyze the file (`/analyze`) |
+| 👁️ | Open the file in Split Preview (editor + rendered Markdown side-by-side) |
+
+### Quick Actions
+Clickable shortcuts for the most common commands — no need to type in chat.
+
+### Architecture Health
+A live linter that scans the vault and flags issues without running any AI:
+
+| Check | What it flags |
+|-------|---------------|
+| **Orphaned Entities** | Files with no incoming or outgoing `[[WikiLinks]]` |
+| **Risks without Owners** | Rows in `X2_Risk_Issue_Register.md` where Owner is `TBD` or empty |
+| **Decisions Pending** | Rows in `X1_ADR_Decision_Log.md` with status `Proposed` |
+| **Open TODOs** | Inline `TODO:` markers across all vault files |
+
+Click any item to jump directly to the file. Use the refresh button (↺) to re-scan after edits.
+
+---
+
 ## Getting Started
 
 ### Prerequisites
@@ -492,7 +601,9 @@ The `@architect` agent reads this metadata to understand document maturity and o
 ```
 src/
   extension.ts        – Entry point, registration
-  participant.ts      – @architect chat handler
+  participant.ts      – @architect chat handler (all slash commands)
+  features.ts         – ADR creation, context diagrams, vault graph
+  sidebar.ts          – Vault Explorer, Quick Actions, Architecture Health views
   vault.ts            – Vault discovery, loading, switching, context windowing
   prompts.ts          – TOGAF system prompts per mode
   updater.ts          – Diff preview, file editor, audit log & backup
