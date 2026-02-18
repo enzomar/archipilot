@@ -272,7 +272,7 @@ describe('todo-extractor', () => {
 
     it('should extract open risks (skipping mitigated ones)', () => {
       const summary = extractTodos(ALL_FILES);
-      const risks = summary.items.filter((i) => i.category === 'risk');
+      const risks = summary.items.filter((i) => i.category === 'risk' || i.category === 'risk-no-owner');
 
       assert.strictEqual(risks.length, 3, 'should find 3 open risks (R-01, R-02, R-03)');
       assert.ok(!risks.some((r) => r.id === 'R-04'), 'should NOT include R-04 (mitigated)');
