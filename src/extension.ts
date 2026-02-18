@@ -7,6 +7,7 @@ import { VaultManager } from './vault.js';
 import { FileUpdater } from './updater.js';
 import { ArchitectParticipant } from './participant.js';
 import { exportToArchimate, extractModel, generateExportSummary, formatSummaryMarkdown, exportToDrawio, formatDrawioSummaryMarkdown } from './core/index.js';
+import { VaultExplorerProvider, QuickActionsProvider, ArchitectureHealthProvider } from './sidebar.js';
 
 let statusBarItem: vscode.StatusBarItem;
 
@@ -32,6 +33,17 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Update status bar when vault changes
   vaultManager.onDidChangeVault(() => updateStatusBar(vaultManager));
+
+  // ── Sidebar views ──
+  const vaultExplorer = new VaultExplorerProvider(vaultManager);
+  const quickActions = new QuickActionsProvider();
+  const healthProvider = new ArchitectureHealthProvider(vaultManager);
+
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider('archipilot.vaultExplorer', vaultExplorer),
+    vscode.window.registerTreeDataProvider('archipilot.quickActions', quickActions),
+    vscode.window.registerTreeDataProvider('archipilot.architectureHealth', healthProvider),
+  );
 
   // ── Commands ──
   context.subscriptions.push(
@@ -191,6 +203,34 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.window.showErrorMessage(`archipilot: Draw.io export failed – ${err}`);
       }
     })
+  );
+
+  // ── Sidebar commands ──
+  context.subscriptions.push(
+    vscode.commands.registerCommand('archipilot.refreshSidebar', () => {
+      vaultExplorer.refresh();
+      quickActions.refresh();
+      healthProvider.refresh();
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('archipilot.openDocument', (item: any) => {
+      if (item?.resourceUri) {
+        vscode.commands.executeCommand('vscode.open', item.resourceUri);
+      }
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('archipilot.askCopilot', (item: any) => {
+      if (item?.resourceUri) {
+        const fileName = item.resourceUri.fsPath.split('/').pop()?.replace(/\.md$/, '') || '';
+        vscode.commands.executeCommand('workbench.action.chat.open', {
+          query: `@architect /analyze Tell me about the ${fileName} artifact`,
+        });
+      }
+    }),
   );
 
   // ── Auto-detect vault on startup ──

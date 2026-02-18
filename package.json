@@ -37,6 +37,37 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "archipilot-sidebar",
+          "title": "archipilot",
+          "icon": "media/sidebar-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "archipilot-sidebar": [
+        {
+          "id": "archipilot.vaultExplorer",
+          "name": "Vault Explorer"
+        },
+        {
+          "id": "archipilot.quickActions",
+          "name": "Quick Actions"
+        },
+        {
+          "id": "archipilot.architectureHealth",
+          "name": "Architecture Health"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "archipilot.vaultExplorer",
+        "contents": "No architecture vault detected.\n[Create New Vault](command:archipilot.newVault)\n[Switch Vault](command:archipilot.switchVault)"
+      }
+    ],
     "chatParticipants": [
       {
         "id": "archipilot.architect",
@@ -120,8 +151,43 @@
       {
         "command": "archipilot.exportDrawio",
         "title": "archipilot: Export Vault to Draw.io (As-Is / Target / Migration)"
+      },
+      {
+        "command": "archipilot.refreshSidebar",
+        "title": "archipilot: Refresh Sidebar",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "archipilot.openDocument",
+        "title": "archipilot: Open Document"
+      },
+      {
+        "command": "archipilot.askCopilot",
+        "title": "archipilot: Ask Copilot about this",
+        "icon": "$(comment-discussion)"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "archipilot.refreshSidebar",
+          "when": "view =~ /^archipilot\\./",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "archipilot.openDocument",
+          "when": "viewItem == vaultFile",
+          "group": "inline"
+        },
+        {
+          "command": "archipilot.askCopilot",
+          "when": "viewItem == vaultFile",
+          "group": "inline"
+        }
+      ]
+    },
     "configuration": {
       "title": "archipilot",
       "properties": {

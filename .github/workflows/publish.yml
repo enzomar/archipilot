@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - 'v*'          # triggers on v0.5.0, v1.0.0, etc.
+  workflow_run:
+    workflows: ["Auto Version Bump"]
+    types: [completed]
 
 permissions:
   contents: write      # needed for GitHub Release creation
@@ -11,35 +14,61 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    if: github.repository == 'enzomar/archipilot'   # prevent forks from publishing
+    if: |
+      github.repository == 'enzomar/archipilot' &&
+      (github.event_name == 'push' || github.event.workflow_run.conclusion == 'success')
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version tag
+        id: version
+        run: |
+          # When triggered by workflow_run, find the latest v* tag
+          TAG=$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$TAG" ]; then
+            echo "No version tag found — skipping publish."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "Publishing $TAG"
+          fi
 
       - name: Use Node.js 22
+        if: steps.version.outputs.skip != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
+        if: steps.version.outputs.skip != 'true'
         run: npm ci
 
       - name: Typecheck
+        if: steps.version.outputs.skip != 'true'
         run: npm run typecheck
 
       - name: Run tests
+        if: steps.version.outputs.skip != 'true'
         run: npm test
 
       - name: Package VSIX
+        if: steps.version.outputs.skip != 'true'
         run: npx @vscode/vsce package --no-dependencies
 
       - name: Publish to Marketplace
+        if: steps.version.outputs.skip != 'true'
         run: npx @vscode/vsce publish --pat "$VSCE_PAT" --no-dependencies
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Create GitHub Release
+        if: steps.version.outputs.skip != 'true'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.tag }}
           files: '*.vsix'
           generate_release_notes: true

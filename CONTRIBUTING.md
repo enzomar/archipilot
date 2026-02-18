@@ -86,6 +86,93 @@ archipilot follows TOGAF ADM phases. When contributing:
 - Maintain wiki-link cross-references between artifacts.
 - Respect YAML front matter schema (version, status, owner, togaf_phase).
 
+## Branch Strategy
+
+The `main` branch is protected. All changes must go through a pull request with passing CI before merging.
+
+### Development Workflow
+
+```bash
+# 1. Create a feature branch
+git checkout -b feat/add-compliance
+
+# 2. Work, commit (use conventional commits)
+git add .
+git commit -m "feat: add /compliance command for Phase G"
+
+# 3. Push the branch
+git push origin feat/add-compliance
+
+# 4. Create a pull request
+gh pr create --fill
+# or open https://github.com/enzomar/archipilot/compare/feat/add-compliance
+
+# 5. Wait for CI to pass, review the diff, then merge
+gh pr merge --squash
+# or merge via the GitHub UI
+
+# 6. Release from main
+git checkout main && git pull
+./scripts/release.sh patch
+```
+
+### Branch Naming Convention
+
+| Prefix | Purpose | Example |
+|--------|---------|---------|
+| `feat/` | New feature | `feat/add-compliance` |
+| `fix/` | Bug fix | `fix/gantt-reserved-words` |
+| `docs/` | Documentation | `docs/update-readme` |
+| `refactor/` | Code improvement | `refactor/extract-parser` |
+| `chore/` | Build, CI, tooling | `chore/update-esbuild` |
+
+## Releasing a New Version
+
+Releases are automated via GitHub Actions. When you push a version tag, CI will test, package, publish to the VS Code Marketplace, and create a GitHub Release.
+
+### Quick Release
+
+Use the helper script:
+
+```bash
+# Stable release (removes -beta if present)
+./scripts/release.sh 0.5.0
+
+# Patch bump (0.5.0 → 0.5.1)
+./scripts/release.sh patch
+
+# Minor bump (0.5.0 → 0.6.0)
+./scripts/release.sh minor
+
+# Major bump (0.6.0 → 1.0.0)
+./scripts/release.sh major
+```
+
+### Manual Release
+
+```bash
+# 1. Bump version
+npm version 0.5.0            # explicit version
+# or: npm version patch       # 0.5.0 → 0.5.1
+# or: npm version minor       # 0.5.0 → 0.6.0
+
+# 2. Push commit + tag
+git push origin main --tags
+```
+
+### What Happens Automatically
+
+1. GitHub Actions runs typecheck + tests
+2. Packages the `.vsix`
+3. Publishes to the VS Code Marketplace
+4. Creates a GitHub Release with the `.vsix` attached
+
+### Pre-requisites (one-time setup)
+
+- Register publisher `enzomar` at https://marketplace.visualstudio.com/manage
+- Create an Azure DevOps PAT with **Marketplace → Manage** scope
+- Add the PAT as a GitHub secret named `VSCE_PAT`
+
 ## License
 
 By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE).
