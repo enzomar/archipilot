@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>archipilot — AI-powered ArchiMate & TOGAF for VS Code</title>
+  <meta name="description" content="archipilot brings AI-assisted enterprise architecture modelling directly into VS Code. Generate, export and review ArchiMate diagrams with GitHub Copilot.">
+  <link rel="icon" type="image/png" sizes="32x32" href="icon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0f14;
+      --surface:   #13161e;
+      --surface2:  #1c2030;
+      --border:    #242840;
+      --accent:    #4f6ef7;
+      --accent-h:  #3a57d4;
+      --accent2:   #7c3aed;
+      --green:     #22c55e;
+      --text:      #e8eaf0;
+      --muted:     #8891a8;
+      --radius:    12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ── NAV ────────────────────────────────────────────── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5vw;
+      height: 64px;
+      background: rgba(13,15,20,.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .logo-icon {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      font-size: .9rem;
+      font-weight: 500;
+      transition: color .2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .55rem 1.25rem;
+      border-radius: 8px;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: var(--accent-h); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(79,110,247,.35); }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-lg { padding: .75rem 1.75rem; font-size: 1rem; border-radius: 10px; }
+
+    /* ── HERO ───────────────────────────────────────────── */
+    .hero {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 100px 5vw 80px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .3rem .85rem;
+      border-radius: 99px;
+      background: rgba(79,110,247,.12);
+      border: 1px solid rgba(79,110,247,.3);
+      color: #a5b4fc;
+      font-size: .8rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+
+    h1 {
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -.03em;
+      margin-bottom: 1.25rem;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 600px;
+      margin: 0 auto 2.5rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 3.5rem;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 2.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -.03em;
+    }
+
+    .stat-label { font-size: .8rem; color: var(--muted); margin-top: .1rem; }
+
+    /* ── CODE PREVIEW ───────────────────────────────────── */
+    .preview-wrap {
+      max-width: 860px;
+      margin: 0 auto 100px;
+      padding: 0 5vw;
+    }
+
+    .code-window {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,.5);
+    }
+
+    .window-bar {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .75rem 1rem;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+
+    .window-title {
+      flex: 1;
+      text-align: center;
+      font-size: .8rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .chat-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+
+    .chat-msg {
+      display: flex;
+      gap: .75rem;
+      align-items: flex-start;
+    }
+
+    .avatar {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem;
+      font-weight: 700;
+    }
+
+    .avatar-user { background: #1e2a4a; color: #a5b4fc; }
+    .avatar-ai   { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+
+    .bubble {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .7rem 1rem;
+      font-size: .88rem;
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1.6;
+      max-width: 680px;
+    }
+
+    .bubble-user { border-color: rgba(79,110,247,.3); }
+
+    .kw  { color: #818cf8; }
+    .str { color: #86efac; }
+    .cmt { color: var(--muted); font-style: italic; }
+
+    /* ── FEATURES ───────────────────────────────────────── */
+    section { padding: 80px 5vw; }
+
+    .section-label {
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: .75rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.75rem, 3vw, 2.4rem);
+      font-weight: 700;
+      letter-spacing: -.03em;
+      margin-bottom: .75rem;
+    }
+
+    .section-sub {
+      color: var(--muted);
+      max-width: 520px;
+      margin-bottom: 3rem;
+    }
+
+    .features {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      transition: border-color .25s, transform .25s;
+    }
+
+    .feature-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+    }
+
+    .feature-icon {
+      width: 42px; height: 42px;
+      border-radius: 10px;
+      background: rgba(79,110,247,.12);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: .4rem;
+    }
+
+    .feature-card p { font-size: .88rem; color: var(--muted); }
+
+    /* ── PRICING ────────────────────────────────────────── */
+    .pricing-section {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pricing-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .plan {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      position: relative;
+      transition: border-color .25s;
+    }
+
+    .plan:hover { border-color: var(--accent); }
+
+    .plan-popular {
+      border-color: var(--accent);
+    }
+
+    .plan-badge {
+      position: absolute;
+      top: -13px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: #fff;
+      font-size: .72rem;
+      font-weight: 700;
+      padding: .2rem .75rem;
+      border-radius: 99px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .plan-name { font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+    .plan-price {
+      display: flex;
+      align-items: flex-end;
+      gap: .3rem;
+    }
+
+    .price-amount {
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -.04em;
+      line-height: 1;
+    }
+
+    .price-period { color: var(--muted); font-size: .9rem; margin-bottom: .2rem; }
+
+    .plan-desc { font-size: .88rem; color: var(--muted); }
+
+    .plan-features { list-style: none; display: flex; flex-direction: column; gap: .6rem; flex: 1; }
+
+    .plan-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: .6rem;
+      font-size: .88rem;
+    }
+
+    .check { color: var(--green); flex-shrink: 0; margin-top: .1rem; }
+    .cross { color: #475569; flex-shrink: 0; margin-top: .1rem; }
+
+    .plan-cta { margin-top: .5rem; text-align: center; }
+
+    /* ── LICENCE KEY FORM ───────────────────────────────── */
+    .buy-section {
+      max-width: 580px;
+      margin: 0 auto;
+    }
+
+    .key-form {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: .4rem; }
+
+    label { font-size: .85rem; font-weight: 500; color: var(--muted); }
+
+    input, select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .65rem 1rem;
+      color: var(--text);
+      font-size: .95rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    input:focus, select:focus { border-color: var(--accent); }
+    select option { background: var(--bg); }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    .form-note { font-size: .8rem; color: var(--muted); text-align: center; }
+    .form-note a { color: var(--accent); }
+
+    /* ── STEPS ──────────────────────────────────────────── */
+    .steps-wrap { max-width: 860px; margin: 0 auto; }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0;
+      position: relative;
+    }
+
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 28px;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .step {
+      text-align: center;
+      padding: 0 1rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-num {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-size: .9rem;
+      margin: 0 auto 1rem;
+    }
+
+    .step.active .step-num {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .step h4 { font-size: .95rem; font-weight: 600; margin-bottom: .3rem; }
+    .step p { font-size: .82rem; color: var(--muted); }
+
+    /* ── FAQ ────────────────────────────────────────────── */
+    .faq-wrap {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    details {
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 0;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 600;
+      font-size: .95rem;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+
+    summary::after {
+      content: '+';
+      font-size: 1.3rem;
+      color: var(--accent);
+      transition: transform .2s;
+    }
+
+    details[open] summary::after { transform: rotate(45deg); }
+
+    details p { margin-top: .75rem; font-size: .9rem; color: var(--muted); }
+
+    /* ── COMMUNITY ──────────────────────────────────────── */
+    .community-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .community-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+    }
+
+    .community-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .community-card p {
+      font-size: .88rem;
+      color: var(--muted);
+      margin-top: -.3rem;
+    }
+
+    .community-card .form-group { display: flex; flex-direction: column; gap: .4rem; }
+    .community-card label { font-size: .82rem; font-weight: 500; color: var(--muted); }
+    .community-card input,
+    .community-card textarea,
+    .community-card select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .6rem .9rem;
+      color: var(--text);
+      font-size: .9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .2s;
+      width: 100%;
+    }
+    .community-card input:focus,
+    .community-card textarea:focus { border-color: var(--accent); }
+    .community-card textarea { resize: vertical; min-height: 90px; }
+
+    .form-success {
+      display: none;
+      background: rgba(34,197,94,.1);
+      border: 1px solid rgba(34,197,94,.3);
+      border-radius: 8px;
+      padding: .8rem 1rem;
+      color: var(--green);
+      font-size: .88rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    /* ── ANNOUNCEMENT BAR ──────────────────────────────── */
+    .announce {
+      background: linear-gradient(90deg, #1a1f35, #1e1040, #1a1f35);
+      border-bottom: 1px solid rgba(124,58,237,.4);
+      text-align: center;
+      padding: .55rem 5vw;
+      font-size: .82rem;
+      color: #c4b5fd;
+      font-weight: 500;
+      letter-spacing: .01em;
+    }
+    .announce strong { color: #fff; }
+    .announce a { color: #a5b4fc; text-decoration: underline; text-underline-offset: 3px; }
+
+    /* ── FOOTER ─────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 5vw;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-links { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .footer-links a { font-size: .85rem; color: var(--muted); transition: color .2s; }
+    .footer-links a:hover { color: var(--text); }
+
+    .footer-copy { font-size: .82rem; color: var(--muted); }
+
+    /* ── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .form-row { grid-template-columns: 1fr; }
+      .steps::before { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ANNOUNCEMENT BAR -->
+<div class="announce">
+  🟣 <strong>Early access:</strong> archipilot is <strong>fully free and open-source right now</strong> — every feature, no limits.
+  Pricing may be introduced as the project grows. <strong>Get started today while it’s all free.</strong>
+  &nbsp;<a href="https://github.com/archipilot" target="_blank">Star on GitHub ↗</a>
+</div>
+
+<!-- ════════════════════ NAV ════════════════════ -->
+<nav>
+  <div class="logo">
+    <img src="icon.png" alt="archipilot" style="width:28px;height:28px;border-radius:7px;object-fit:contain;">
+    archipilot
+  </div>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#community">Community</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a href="https://github.com/enzomar/archipilot" target="_blank">GitHub</a></li>
+  </ul>
+  <a href="https://www.paypal.com/ncp/payment/FVD29BYF8FWYA" target="_blank" rel="noopener"
+     class="btn btn-primary"
+     style="background:#0070ba;gap:.45rem;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M7.144 19.532l1.049-5.751A6.503 6.503 0 0 0 14.5 17h.351c3.273 0 6.056-2.377 6.56-5.612l.124-.81C22.057 7.006 19.613 4 16.086 4H8.44a1 1 0 0 0-.986.836L5.068 18.696a.5.5 0 0 0 .493.586h1.583a.5.5 0 0 0 .493-.42z"/></svg>
+    Support on PayPal
+  </a>
+</nav>
+
+<!-- ════════════════════ HERO ════════════════════ -->
+<section class="hero">
+  <div class="badge">
+    <span class="badge-dot"></span>
+    VS Code Extension · Early Access — Free Now
+  </div>
+
+  <h1>Enterprise architecture,<br><span class="gradient-text">AI-accelerated</span></h1>
+
+  <p class="hero-sub">
+    archipilot turns your Obsidian architecture vault into an AI-powered TOGAF assistant.
+    Ask questions, record decisions, export to ArchiMate and Draw.io — all via <code style="font-family:monospace;color:#a5b4fc">@architect</code> in Copilot Chat.
+  </p>
+
+  <div class="hero-actions">
+    <a href="https://marketplace.visualstudio.com/items?itemName=enzomar.archipilot"
+       class="btn btn-primary btn-lg" target="_blank">
+      ⬇ Install free on VS Code
+    </a>
+    <a href="https://github.com/enzomar/archipilot" target="_blank" class="btn btn-outline btn-lg">View source on GitHub</a>
+  </div>
+
+  <p style="font-size:.85rem;color:var(--green);margin-top:-.5rem;margin-bottom:2rem;font-weight:600;">
+    ✓ 100% free today &nbsp;·&nbsp; MIT-licensed &nbsp;·&nbsp; No account required
+    <span style="color:var(--muted);font-weight:400"> &nbsp;·&nbsp; may change in the future</span>
+  </p>
+
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="stat-val">100%</div>
+      <div class="stat-label">Free, all features</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">15+</div>
+      <div class="stat-label">Slash commands</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">TOGAF</div>
+      <div class="stat-label">ADM-aligned</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">&lt;1 s</div>
+      <div class="stat-label">Diagram generation</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ CODE PREVIEW ════════════════════ -->
+<div class="preview-wrap">
+  <div class="code-window">
+    <div class="window-bar">
+      <span class="dot dot-r"></span>
+      <span class="dot dot-y"></span>
+      <span class="dot dot-g"></span>
+      <span class="window-title">GitHub Copilot Chat — @architect</span>
+    </div>
+    <div class="chat-body">
+      <div class="chat-msg">
+        <div class="avatar avatar-user">VM</div>
+        <div class="bubble bubble-user">
+          <span class="kw">@architect</span> /archimate Analyze this export for cross-layer traceability gaps
+        </div>
+      </div>
+      <div class="chat-msg">
+        <div class="avatar avatar-ai">✦</div>
+        <div class="bubble">
+          <span class="cmt">// Scanning vault · 27 TOGAF files · extracting ArchiMate 3.2 elements…</span><br><br>
+          <span class="kw">Business Layer</span>  — 12 processes, 4 capabilities ✓<br>
+          <span class="kw">Application Layer</span> — 9 components, 6 interfaces ✓<br>
+          <span class="kw">Technology Layer</span>  — 7 nodes, 3 system-software ✓<br>
+          <span class="kw">Motivation</span>       — 8 requirements, 5 risks, 3 principles ✓<br><br>
+          <span class="str">⚠ Gap: C1 → D1 interface missing a serving relationship</span><br>
+          <span class="cmt">// ✅ Exported to exports/archimate/vault.archimate (importable by Archi, BiZZdesign, Sparx EA)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ FEATURES ════════════════════ -->
+<section id="features">
+  <div class="features">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">Everything your architecture team needs</h2>
+    <p class="section-sub">Every feature is <strong style="color:var(--text)">free right now</strong> — MIT-licensed, no account, no paywalls. We may introduce pricing as the project matures, so now is the best time to get started. If archipilot saves you time, consider <a href="https://www.paypal.me/archipilot" target="_blank" style="color:var(--accent)">supporting development</a>.</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3><code style="font-family:monospace;font-size:.95em">@architect</code> Chat Participant</h3>
+        <p>15+ slash commands available directly in Copilot Chat. Ask architecture questions, run analyses, update vault documents — all without leaving your editor.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📂</div>
+        <h3>Obsidian Vault Integration</h3>
+        <p>Connects to your existing Obsidian vault as the authoritative architecture context. Parses Markdown, YAML front matter, and <code style="font-family:monospace;color:#a5b4fc">[[WikiLinks]]</code> across all 27 TOGAF ADM files.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🗂</div>
+        <h3>TOGAF ADM Governance</h3>
+        <p>Enforce architecture discipline across the full ADM lifecycle. Update vault documents with diff preview, dry-run mode, and a full audit log — <code style="font-family:monospace;color:#a5b4fc">/update</code>, <code style="font-family:monospace;color:#a5b4fc">/gate</code>, <code style="font-family:monospace;color:#a5b4fc">/review</code>.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📤</div>
+        <h3>ArchiMate 3.2 Export</h3>
+        <p>Export your vault to ArchiMate Open Exchange XML — importable by Archi, BiZZdesign, Sparx EA, and ADOIT. Five views auto-generated: Business, Application, Technology, Motivation, and Implementation.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <h3>Draw.io Export</h3>
+        <p>One command produces three architectural views: <strong>As-Is</strong>, <strong>Target</strong>, and color-coded <strong>Migration</strong> overlay. Saved as <code style="font-family:monospace;color:#a5b4fc">.drawio</code> files in your vault's <code style="font-family:monospace;color:#a5b4fc">exports/</code> folder.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🏥</div>
+        <h3>Architecture Health Linter</h3>
+        <p>Live sidebar linter that flags orphaned files, risks without owners, pending decisions, and open TODOs — no AI needed. Click any item to jump directly to the file.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📝</div>
+        <h3>Decision Log &amp; ADR Support</h3>
+        <p>Record Architecture Decision Records with <code style="font-family:monospace;color:#a5b4fc">/adr</code>. Get structured pros/cons analysis on open decisions with <code style="font-family:monospace;color:#a5b4fc">/decide</code>. Auto-assigned IDs, linked to your vault.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>C4, Mermaid &amp; Gantt Diagrams</h3>
+        <p>Generate C4 context and container diagrams (<code style="font-family:monospace;color:#a5b4fc">/c4</code>), full vault dependency graphs (<code style="font-family:monospace;color:#a5b4fc">/graph</code>), file-level context diagrams (<code style="font-family:monospace;color:#a5b4fc">/diagram</code>), and Gantt roadmaps (<code style="font-family:monospace;color:#a5b4fc">/timeline</code>).</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌍</div>
+        <h3>Fully Open-Source (MIT)</h3>
+        <p>Every line — parsing, prompts, exporters, and the chat participant — is MIT-licensed and publicly auditable on GitHub. No black boxes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ PRICING (hidden) ════════════════════ -->
+<section id="pricing" class="pricing-section" style="display:none">
+  <div class="pricing-wrap">
+    <div class="section-label">Pricing</div>
+    <h2 class="section-title">Simple, transparent pricing</h2>
+    <p class="section-sub">Start free. Upgrade when you need ArchiMate or Draw.io exports.</p>
+
+    <div class="pricing-grid">
+      <!-- FREE -->
+      <div class="plan">
+        <div class="plan-name">Free</div>
+        <div class="plan-price">
+          <span class="price-amount">$0</span>
+          <span class="price-period">forever</span>
+        </div>
+        <p class="plan-desc">For individuals exploring AI-assisted architecture.</p>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> ArchiMate 3.2 model generation</li>
+          <li><span class="check">✓</span> TOGAF ADM guidance</li>
+          <li><span class="check">✓</span> Copilot Chat integration</li>
+          <li><span class="check">✓</span> MIT-licensed open-source core</li>
+          <li><span class="cross">—</span> ArchiMate file export</li>
+          <li><span class="cross">—</span> Draw.io export</li>
+          <li><span class="cross">—</span> Compliance PDF</li>
+        </ul>
+        <div class="plan-cta">
+          <a href="https://marketplace.visualstudio.com/items?itemName=enzomar.archipilot"
+             class="btn btn-outline" style="width:100%;justify-content:center" target="_blank">
+            Install free
+          </a>
+        </div>
+      </div>
+
+      <!-- PRO -->
+      <div class="plan plan-popular">
+        <div class="plan-badge">Most popular</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">
+          <span class="price-amount">$9</span>
+          <span class="price-period">/ month</span>
+        </div>
+        <p class="plan-desc">For architects who need full export power.</p>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> Everything in Free</li>
+          <li><span class="check">✓</span> ArchiMate file export</li>
+          <li><span class="check">✓</span> Draw.io XML export</li>
+          <li><span class="check">✓</span> Pro prompt templates</li>
+          <li><span class="check">✓</span> Priority email support</li>
+          <li><span class="cross">—</span> Team vault sync</li>
+          <li><span class="cross">—</span> SSO / SAML</li>
+        </ul>
+        <div class="plan-cta">
+          <a href="https://www.paypal.me/archipilot" target="_blank" rel="noopener"
+             class="btn btn-primary" style="width:100%;justify-content:center;background:#0070ba;">
+            Support on PayPal
+          </a>
+        </div>
+      </div>
+
+      <!-- ENTERPRISE -->
+      <div class="plan">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price">
+          <span class="price-amount">$49</span>
+          <span class="price-period">/ month</span>
+        </div>
+        <p class="plan-desc">For teams and organisations with compliance requirements.</p>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> Everything in Pro</li>
+          <li><span class="check">✓</span> Compliance PDF export</li>
+          <li><span class="check">✓</span> Shared vault sync</li>
+          <li><span class="check">✓</span> Org health dashboard</li>
+          <li><span class="check">✓</span> SSO / SAML</li>
+          <li><span class="check">✓</span> SLA support &amp; Slack channel</li>
+          <li><span class="check">✓</span> Unlimited seats</li>
+        </ul>
+        <div class="plan-cta">
+          <a href="mailto:sales@archipilot.dev?subject=Enterprise%20enquiry"
+             class="btn btn-outline" style="width:100%;justify-content:center">
+            Contact sales
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ HOW IT WORKS ════════════════════ -->
+<section>
+  <div class="steps-wrap">
+    <div class="section-label" style="text-align:center">How it works</div>
+    <h2 class="section-title" style="text-align:center;margin-bottom:3rem">Up and running in 3 steps</h2>
+
+    <div class="steps">
+      <div class="step active">
+        <div class="step-num">1</div>
+        <h4>Install &amp; open your vault</h4>
+        <p>Install archipilot from the VS Code Marketplace, then open a workspace containing your Obsidian vault folder.</p>
+      </div>
+      <div class="step active">
+        <div class="step-num">2</div>
+        <h4>Open Copilot Chat</h4>
+        <p>Type <code style="font-family:monospace;color:#a5b4fc">@architect /archimate</code>, <code style="font-family:monospace;color:#a5b4fc">/drawio</code>, or <code style="font-family:monospace;color:#a5b4fc">/status</code> to start working with your vault.</p>
+      </div>
+      <div class="step active">
+        <div class="step-num">3</div>
+        <h4>Export &amp; iterate</h4>
+        <p>Run <code style="font-family:monospace;color:#a5b4fc">/archimate</code> or <code style="font-family:monospace;color:#a5b4fc">/drawio</code> to export your diagrams and keep refining them.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ COMMUNITY ════════════════════ -->
+<!--
+  Both forms use Formspree (free tier — 50 submissions/month, zero backend).
+  Setup in 2 minutes:
+    1. Go to https://formspree.io and create a free account.
+    2. Create two forms: "Feedback" and "Stay Updated".
+    3. Replace YOUR_FEEDBACK_FORM_ID and YOUR_SUBSCRIBE_FORM_ID below with the IDs Formspree gives you.
+-->
+<section id="community" style="background:var(--surface);border-top:1px solid var(--border);">
+  <div style="max-width:1100px;margin:0 auto;padding:0 5vw;">
+    <div class="section-label" style="text-align:center">Community</div>
+    <h2 class="section-title" style="text-align:center">Get involved</h2>
+    <p class="section-sub" style="text-align:center;margin:0 auto 2.5rem">
+      Share what you think, or drop your email to hear about new features and changes before anyone else.
+    </p>
+
+    <div class="community-grid">
+
+      <!-- FEEDBACK -->
+      <div class="community-card">
+        <h3>💬 Feedback</h3>
+        <p>Bug, idea, or something you love? Tell us — every message is read by the maintainer.</p>
+        <form id="feedback-form"
+              action="https://formspree.io/f/xzdavlgo"
+              method="POST"
+              onsubmit="handleForm(event,'feedback-form','feedback-success')">
+          <div class="form-group">
+            <label for="fb-type">Type</label>
+            <select id="fb-type" name="type">
+              <option value="bug">Bug report</option>
+              <option value="idea">Feature idea</option>
+              <option value="other">General feedback</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="fb-email">Your email <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+            <input id="fb-email" type="email" name="email" placeholder="so we can follow up" />
+          </div>
+          <div class="form-group">
+            <label for="fb-msg">Message</label>
+            <textarea id="fb-msg" name="message" placeholder="What's on your mind?" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+            Send feedback
+          </button>
+          <div class="form-success" id="feedback-success">✓ Thanks! We’ll read it carefully.</div>
+               <p style="font-size:.75rem;color:var(--muted);text-align:center;margin-top:-.25rem">
+            Powered by <a href="https://formspree.io" target="_blank" style="color:var(--muted);text-decoration:underline">Formspree</a> (free). No marketing lists, ever.
+          </p>
+        </form>
+      </div>
+
+      <!-- SUBSCRIBE -->
+      <div class="community-card">
+        <h3>📨 Stay updated</h3>
+        <p>We’ll email you when there are meaningful updates — new commands, changes to pricing, or big milestones. No spam, unsubscribe anytime.</p>
+        <form id="subscribe-form"
+              action="https://formspree.io/f/mojnlowz"
+              method="POST"
+              onsubmit="handleForm(event,'subscribe-form','subscribe-success')">
+          <input type="hidden" name="_subject" value="New archipilot subscriber" />
+          <div class="form-group">
+            <label for="sub-name">First name <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+            <input id="sub-name" type="text" name="name" placeholder="Jane" />
+          </div>
+          <div class="form-group">
+            <label for="sub-email">Email address</label>
+            <input id="sub-email" type="email" name="email" placeholder="jane@company.com" required />
+          </div>
+          <div class="form-group">
+            <label for="sub-role">I am a… <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+            <select id="sub-role" name="role">
+              <option value="">Select…</option>
+              <option value="architect">Enterprise Architect</option>
+              <option value="developer">Developer</option>
+              <option value="consultant">Consultant</option>
+              <option value="student">Student / Researcher</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.25rem">
+            Notify me of updates
+          </button>
+          <div class="form-success" id="subscribe-success">✓ You’re on the list! We’ll be in touch.</div>
+          <p style="font-size:.75rem;color:var(--muted);text-align:center;margin-top:-.25rem">
+            Powered by <a href="https://formspree.io" target="_blank" style="color:var(--muted);text-decoration:underline">Formspree</a> (free). No marketing lists, ever.
+          </p>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ FAQ ════════════════════ -->
+<section id="faq">
+  <div class="faq-wrap">
+    <div class="section-label" style="text-align:center">FAQ</div>
+    <h2 class="section-title" style="text-align:center;margin-bottom:2.5rem">Frequently asked questions</h2>
+
+    <details open>
+      <summary>What is archipilot?</summary>
+      <p>archipilot is a VS Code extension that adds an <code style="font-family:monospace;color:#a5b4fc">@architect</code> GitHub Copilot Chat participant. It reads your Obsidian vault as live architecture context and lets you query, update, and export TOGAF ADM-aligned models — all via natural language in Copilot Chat.</p>
+    </details>
+
+    <details>
+      <summary>Do I need a GitHub Copilot subscription?</summary>
+      <p>Yes. archipilot works as a chat participant inside GitHub Copilot Chat, so an active Copilot subscription (Individual, Business, or Enterprise) is required.</p>
+    </details>
+
+    <details>
+      <summary>Do I need an Obsidian vault?</summary>
+      <p>archipilot expects a folder of Markdown files structured as TOGAF ADM documents (with YAML front matter and <code style="font-family:monospace;color:#a5b4fc">[[WikiLinks]]</code>). This is the same structure used by Obsidian. You can scaffold a fresh vault from scratch with <code style="font-family:monospace;color:#a5b4fc">@architect /new</code>.</p>
+    </details>
+
+    <details>
+      <summary>Is the source code open?</summary>
+      <p>Yes — today, archipilot is fully MIT-licensed. Every line, including the ArchiMate and Draw.io exporters, is publicly auditable on GitHub. The project is in early access and we haven't decided on a long-term business model yet, so we can't promise this will always be the case. Try it now and benefit from everything being free.</p>
+    </details>
+
+    <details>
+      <summary>Which tools can open the exported ArchiMate files?</summary>
+      <p>The <code style="font-family:monospace;color:#a5b4fc">/archimate</code> command exports ArchiMate 3.2 Open Exchange Format (OEFF) XML. This is importable by <strong>Archi</strong>, <strong>BiZZdesign</strong>, <strong>Sparx EA</strong>, <strong>ADOIT</strong>, and any tool that supports the ArchiMate Exchange standard.</p>
+    </details>
+  </div>
+</section>
+
+<!-- ════════════════════ FOOTER ════════════════════ -->
+<footer>
+  <div class="logo">
+    <img src="icon.png" alt="archipilot" style="width:28px;height:28px;border-radius:7px;object-fit:contain;">
+    archipilot
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/enzomar/archipilot" target="_blank">GitHub</a>
+  </div>
+  <p class="footer-copy">© 2026 archipilot. Independent open-source project, not affiliated with GitHub or Microsoft.</p>
+</footer>
+
+<!-- ════════════════════ JS ════════════════════ -->
+<script>
+  async function handleForm(e, formId, successId) {
+    e.preventDefault();
+    const form = document.getElementById(formId);
+    const btn  = form.querySelector('button[type="submit"]');
+    const ok   = document.getElementById(successId);
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    try {
+      const res = await fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'Accept': 'application/json' }
+      });
+      if (res.ok) {
+        form.reset();
+        btn.style.display = 'none';
+        ok.style.display  = 'block';
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Try again';
+      }
+    } catch {
+      btn.disabled = false;
+      btn.textContent = 'Try again (offline?)';
+    }
+  }
+</script>
+
+</body>
+</html>
