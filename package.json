@@ -135,6 +135,18 @@
           {
             "name": "graph",
             "description": "Visualize the entire vault as a full dependency graph (Mermaid flowchart)"
+          },
+          {
+            "name": "impact",
+            "description": "Show the cross-vault impact chain for a TOGAF ID, e.g. /impact AD-02 or /impact R-05"
+          },
+          {
+            "name": "review",
+            "description": "Automated architecture review — assess quality, completeness, and TOGAF compliance"
+          },
+          {
+            "name": "gate",
+            "description": "Phase gate checklist — evaluate whether a TOGAF ADM phase is ready to proceed"
           }
         ]
       }
@@ -194,6 +206,11 @@
         "command": "archipilot.openSplitPreview",
         "title": "archipilot: Open in Split Preview",
         "icon": "$(open-preview)"
+      },
+      {
+        "command": "archipilot.filterVaultExplorer",
+        "title": "archipilot: Search / Filter Vault Files",
+        "icon": "$(search)"
       }
     ],
     "menus": {
@@ -201,6 +218,11 @@
         {
           "command": "archipilot.refreshSidebar",
           "when": "view =~ /^archipilot\\./",
+          "group": "navigation"
+        },
+        {
+          "command": "archipilot.filterVaultExplorer",
+          "when": "view == archipilot.vaultExplorer",
           "group": "navigation"
         }
       ],
@@ -234,6 +256,14 @@
           "type": "string",
           "default": "architectures",
           "description": "Folder name (relative to workspace root) where architecture projects are created and discovered. The /new command creates vaults inside this folder."
+        },
+        "archipilot.hiddenQuickActions": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "List of Quick Action labels or command shortcuts to hide from the sidebar (e.g. [\"Sizing Catalogue\", \"/sizing\"]). Use the label text or the /command shortcut shown in the Quick Actions panel."
         }
       }
     },

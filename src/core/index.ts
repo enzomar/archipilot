@@ -67,3 +67,53 @@ export type {
   TodoPriority,
   TogafPhase,
 } from './todo-extractor.js';
+export {
+  ADR_DEFAULT_CONTENT,
+  nextAdrId,
+  formatAdrEntry,
+  safeNodeId,
+  extractWikiLinks,
+  generateContextDiagramMermaid,
+  generateVaultGraphMermaid,
+} from './diagram-helpers.js';
+export {
+  extractC4Scaffold,
+  formatC4ScaffoldMarkdown,
+} from './c4-scaffold.js';
+export type {
+  C4Scaffold,
+  C4Person,
+  C4ExternalSystem,
+  C4Container,
+  C4Component,
+  C4Integration,
+  C4GraphData,
+} from './c4-scaffold.js';
+export {
+  extractSizingScaffold,
+  formatSizingScaffoldMarkdown,
+} from './sizing-scaffold.js';
+export type {
+  SizingScaffold,
+  SizingComponent,
+  CostEstimate,
+  CapacityAssumption,
+  NfrTarget,
+  ScenarioHint,
+} from './sizing-scaffold.js';
+export {
+  extractTimelineScaffold,
+  formatTimelineScaffoldMarkdown,
+} from './timeline-scaffold.js';
+export type {
+  TimelineScaffold,
+  TimelinePhase,
+  TimelineWorkPackage,
+  TimelineMilestone,
+  GanttTask,
+  GanttMilestone,
+  ExistingGantt,
+  TransitionState,
+  TimelineRisk,
+  TimelineQuestion,
+} from './timeline-scaffold.js';

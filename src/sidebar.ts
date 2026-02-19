@@ -81,6 +81,7 @@ class SidebarItem extends vscode.TreeItem {
 export class VaultExplorerProvider implements vscode.TreeDataProvider<SidebarItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<SidebarItem | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+  private _filterText = '';
 
   constructor(private readonly vault: VaultManager) {
     vault.onDidChangeVault(() => this.refresh());
@@ -88,6 +89,17 @@ export class VaultExplorerProvider implements vscode.TreeDataProvider<SidebarIte
 
   refresh(): void {
     this._onDidChangeTreeData.fire();
+  }
+
+  /** Set a filter string and refresh the tree. Empty string clears the filter. */
+  setFilter(text: string): void {
+    this._filterText = text.toLowerCase().trim();
+    this.refresh();
+  }
+
+  /** Get the current filter text. */
+  get filterText(): string {
+    return this._filterText;
   }
 
   getTreeItem(element: SidebarItem): vscode.TreeItem {
@@ -122,12 +134,20 @@ export class VaultExplorerProvider implements vscode.TreeDataProvider<SidebarIte
           ),
         );
 
-        // Group files by phase
+        // Group files by phase (applying filter if set)
         for (const phase of TOGAF_PHASES) {
-          const phaseFiles = info.files.filter((f) => {
+          let phaseFiles = info.files.filter((f) => {
             const group = phaseForFile(f.name);
             return group?.label === phase.label;
           });
+
+          // Apply search filter
+          if (this._filterText) {
+            phaseFiles = phaseFiles.filter((f) =>
+              f.name.toLowerCase().includes(this._filterText) ||
+              f.content.toLowerCase().includes(this._filterText)
+            );
+          }
           if (phaseFiles.length > 0) {
             const item = new SidebarItem(
               phase.label,
@@ -240,6 +260,38 @@ const QUICK_ACTIONS: ActionDef[] = [
     group: 'architecture',
   },
   {
+    label: 'Impact Analysis',
+    icon: 'pulse',
+    command: 'workbench.action.chat.open',
+    args: [{ query: '@architect /impact ' }],
+    description: '/impact',
+    group: 'architecture',
+  },
+  {
+    label: 'Record ADR',
+    icon: 'record',
+    command: 'workbench.action.chat.open',
+    args: [{ query: '@architect /adr ' }],
+    description: '/adr',
+    group: 'architecture',
+  },
+  {
+    label: 'Architecture Review',
+    icon: 'checklist',
+    command: 'workbench.action.chat.open',
+    args: [{ query: '@architect /review' }],
+    description: '/review',
+    group: 'architecture',
+  },
+  {
+    label: 'Phase Gate Check',
+    icon: 'pass',
+    command: 'workbench.action.chat.open',
+    args: [{ query: '@architect /gate ' }],
+    description: '/gate',
+    group: 'architecture',
+  },
+  {
     label: 'Generate C4 Diagram',
     icon: 'type-hierarchy',
     command: 'workbench.action.chat.open',
@@ -278,6 +330,22 @@ const QUICK_ACTIONS: ActionDef[] = [
     group: 'diagrams',
   },
   {
+    label: 'Context Diagram',
+    icon: 'symbol-structure',
+    command: 'workbench.action.chat.open',
+    args: [{ query: '@architect /diagram' }],
+    description: '/diagram',
+    group: 'diagrams',
+  },
+  {
+    label: 'Vault Graph',
+    icon: 'graph',
+    command: 'workbench.action.chat.open',
+    args: [{ query: '@architect /graph' }],
+    description: '/graph',
+    group: 'diagrams',
+  },
+  {
     label: 'Create New Vault',
     icon: 'new-folder',
     command: 'archipilot.newVault',
@@ -305,22 +373,36 @@ export class QuickActionsProvider implements vscode.TreeDataProvider<SidebarItem
     return element;
   }
 
+  /** Returns the list of hidden action labels from user configuration. */
+  private _getHiddenActions(): Set<string> {
+    const cfg = vscode.workspace.getConfiguration('archipilot');
+    const hidden: string[] = cfg.get('hiddenQuickActions', []);
+    return new Set(hidden.map((h) => h.toLowerCase()));
+  }
+
   async getChildren(element?: SidebarItem): Promise<SidebarItem[]> {
+    const hidden = this._getHiddenActions();
+    const visibleActions = QUICK_ACTIONS.filter(
+      (a) => !hidden.has(a.label.toLowerCase()) && !hidden.has(a.description?.toLowerCase() ?? ''),
+    );
+
     // Top level: show groups
     if (!element) {
-      return ACTION_GROUPS.map(
-        (g) =>
-          new SidebarItem(g.label, vscode.TreeItemCollapsibleState.Expanded, {
-            icon: g.icon,
-            description: `${QUICK_ACTIONS.filter((a) => a.group === g.key).length}`,
-          }),
-      );
+      return ACTION_GROUPS
+        .filter((g) => visibleActions.some((a) => a.group === g.key))
+        .map(
+          (g) =>
+            new SidebarItem(g.label, vscode.TreeItemCollapsibleState.Expanded, {
+              icon: g.icon,
+              description: `${visibleActions.filter((a) => a.group === g.key).length}`,
+            }),
+        );
     }
 
     // Children: actions in this group
     const groupKey = ACTION_GROUPS.find((g) => g.label === element.label)?.key;
     if (groupKey) {
-      return QUICK_ACTIONS.filter((a) => a.group === groupKey).map(
+      return visibleActions.filter((a) => a.group === groupKey).map(
         (a) =>
           new SidebarItem(a.label, vscode.TreeItemCollapsibleState.None, {
             icon: a.icon,
@@ -354,6 +436,12 @@ const CATEGORY_LABELS: Record<TodoCategory, { label: string; icon: string }> = {
   'change-request':     { label: 'Pending Change Requests', icon: 'git-pull-request' },
   'document-maturity':  { label: 'Draft Documents',         icon: 'file' },
   'ownership':          { label: 'Unassigned Ownership',    icon: 'person' },
+  'metadata-gap':       { label: 'Metadata Gaps',           icon: 'tag' },
+  'capability-gap':     { label: 'Capability Gaps',         icon: 'extensions' },
+  'scenario-gap':       { label: 'Business Scenario Gaps',  icon: 'play' },
+  'contract-gap':       { label: 'Contract Gaps',           icon: 'file-symlink-file' },
+  'traceability-gap':   { label: 'Traceability Gaps',       icon: 'references' },
+  'broken-link':         { label: 'Broken WikiLinks',        icon: 'debug-disconnect' },
 };
 
 const PRIORITY_ICONS: Record<TodoPriority, string> = {
@@ -367,6 +455,7 @@ export class ArchitectureHealthProvider implements vscode.TreeDataProvider<Sideb
   private _onDidChangeTreeData = new vscode.EventEmitter<SidebarItem | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
   private _summary: TodoSummary | undefined;
+  private _files: VaultFile[] = [];
 
   constructor(private readonly vault: VaultManager) {
     vault.onDidChangeVault(() => this.refresh());
@@ -374,6 +463,7 @@ export class ArchitectureHealthProvider implements vscode.TreeDataProvider<Sideb
 
   refresh(): void {
     this._summary = undefined;
+    this._files = [];
     this._onDidChangeTreeData.fire();
   }
 
@@ -395,6 +485,7 @@ export class ArchitectureHealthProvider implements vscode.TreeDataProvider<Sideb
       try {
         const info = await this.vault.loadVault();
         this._summary = extractTodos(info.files);
+        this._files = info.files;
       } catch {
         return [
           new SidebarItem('Failed to analyze vault', vscode.TreeItemCollapsibleState.None, {
@@ -440,6 +531,19 @@ export class ArchitectureHealthProvider implements vscode.TreeDataProvider<Sideb
         ),
       );
 
+      // Phase Readiness
+      const phaseReadinessItem = new SidebarItem(
+        'Phase Readiness',
+        vscode.TreeItemCollapsibleState.Collapsed,
+        {
+          icon: 'graph',
+          description: `${this._files.length} files`,
+          tooltip: 'ADM phase-by-phase readiness based on document status',
+        },
+      );
+      (phaseReadinessItem as any)._type = 'phaseReadiness';
+      items.push(phaseReadinessItem);
+
       // Category breakdown
       for (const [cat, meta] of Object.entries(CATEGORY_LABELS)) {
         const count = summary.byCategoryCount[cat as TodoCategory] || 0;
@@ -458,6 +562,22 @@ export class ArchitectureHealthProvider implements vscode.TreeDataProvider<Sideb
       }
 
       return items;
+    }
+
+    // Children: Phase Readiness per-phase scores
+    if ((element as any)._type === 'phaseReadiness') {
+      return computePhaseReadiness(this._files).map(({ label, icon, pct, fileCount }) => {
+        const statusIcon = pct >= 75 ? 'pass' : pct >= 40 ? 'warning' : 'error';
+        return new SidebarItem(
+          label,
+          vscode.TreeItemCollapsibleState.None,
+          {
+            icon: statusIcon,
+            description: `${pct}% ready`,
+            tooltip: `${fileCount} file${fileCount === 1 ? '' : 's'}  ·  ${pct}% have approved/accepted/complete status`,
+          },
+        );
+      });
     }
 
     // Children: individual todo items in a category
@@ -486,6 +606,48 @@ export class ArchitectureHealthProvider implements vscode.TreeDataProvider<Sideb
 }
 
 // ── Helpers ────────────────────────────────────────────────────────
+
+// ── Phase Readiness ──────────────────────────────────────────────
+
+interface PhaseScore {
+  label: string;
+  icon: string;
+  pct: number;
+  fileCount: number;
+}
+
+function computePhaseReadiness(files: VaultFile[]): PhaseScore[] {
+  const scoreMap = new Map<string, { icon: string; total: number; score: number }>();
+  for (const f of files) {
+    const phase = phaseForFile(f.name);
+    if (!phase) { continue; }
+    const status = extractFrontMatterStatus(f.content);
+    let score = 0;
+    if (status) {
+      const s = status.toLowerCase();
+      if (s.includes('approved') || s.includes('accepted') || s.includes('complete')) {
+        score = 1;
+      } else if (!s.includes('draft') && !s.includes('proposed')) {
+        score = 0.5; // in-review / partial
+      }
+    }
+    const existing = scoreMap.get(phase.label) || { icon: phase.icon, total: 0, score: 0 };
+    scoreMap.set(phase.label, { icon: phase.icon, total: existing.total + 1, score: existing.score + score });
+  }
+
+  // Return in TOGAF_PHASES order
+  return TOGAF_PHASES
+    .filter((p) => scoreMap.has(p.label))
+    .map((p) => {
+      const { icon, total, score } = scoreMap.get(p.label)!;
+      return {
+        label: p.label,
+        icon,
+        pct: total > 0 ? Math.round((score / total) * 100) : 0,
+        fileCount: total,
+      };
+    });
+}
 
 function extractFrontMatterStatus(content: string): string | undefined {
   const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);

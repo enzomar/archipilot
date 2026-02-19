@@ -12,6 +12,51 @@ A VS Code Chat Participant extension that turns your Obsidian architecture vault
   <em>Ask architecture questions, resolve decisions, update vault documents — all from Copilot Chat.</em>
 </p>
 
+## How It Works
+
+```mermaid
+flowchart LR
+  subgraph You["🧑‍💼 Enterprise Architect"]
+    Chat["Copilot Chat<br/>@architect /command"]
+    Sidebar["Sidebar<br/>Vault Explorer · Health"]
+    Palette["Command Palette<br/>Quick exports"]
+  end
+
+  subgraph archipilot["⚙️ archipilot Extension"]
+    Router["Command Router"]
+    Prompts["TOGAF Prompt Builder"]
+    Core["Core Engine<br/>Parser · Validator · Exporter"]
+    Updater["File Updater<br/>Diff · Backup · Audit"]
+  end
+
+  subgraph Vault["📂 Obsidian Vault"]
+    ADM["TOGAF ADM Files<br/>A1–X5 (.md)"]
+    YAML["YAML Front Matter<br/>status · owner · version"]
+    Links["WikiLinks<br/>Cross-references"]
+    Exports["exports/<br/>ArchiMate · Draw.io"]
+  end
+
+  Chat --> Router
+  Sidebar --> Router
+  Palette --> Router
+  Router --> Prompts
+  Prompts -->|"LLM via Copilot"| Core
+  Core --> Updater
+  Updater -->|"read / write"| Vault
+  Core -->|"read-only scans"| Vault
+
+  style You fill:#f0f4ff,stroke:#6366f1
+  style archipilot fill:#fefce8,stroke:#ca8a04
+  style Vault fill:#ecfdf5,stroke:#059669
+```
+
+**Typical workflow:**
+1. **Ask** — Type `@architect /status` to see your vault's health dashboard
+2. **Analyze** — Use `/analyze` or `/todo` to find gaps, blockers, and priorities
+3. **Decide** — Run `/decide` for structured pros/cons on open decisions
+4. **Update** — Apply changes with `/update` — diff preview + confirmation + audit log
+5. **Export** — Generate ArchiMate XML, Draw.io diagrams, C4 models, or Gantt timelines
+6. **Govern** — Use `/review` and `/gate` for quality checks and phase gate assessments
 
 ## Features
 
@@ -51,6 +96,34 @@ A VS Code Chat Participant extension that turns your Obsidian architecture vault
 | `archipilot: Generate Context Diagram` | Insert a Mermaid diagram for the active file without using chat |
 | `archipilot: Show Vault Graph` | Generate and open `Vault-Graph.mermaid` without using chat |
 | `archipilot: Open in Split Preview` | Open a vault file side-by-side with its Markdown preview (sidebar icon) |
+
+### Command Cheat Sheet
+
+A quick reference for every `@architect` command — print this or keep it open while working.
+
+| Command | What it does | Modifies files? |
+|---------|-------------|:---:|
+| `@architect` | Free-form architecture Q&A | No |
+| `/analyze` | Impact analysis of a proposed change | No |
+| `/decide` | Structured pros/cons for an open decision | No |
+| `/status` | Vault health dashboard (maturity, risks, gaps) | No |
+| `/todo` | Prioritised TOGAF action items from the vault | No |
+| `/review` | Automated quality & completeness review | No |
+| `/gate <phase>` | Phase gate readiness checklist | No |
+| `/impact <ID>` | Cross-vault impact chain for a TOGAF ID | No |
+| `/update <instruction>` | Modify vault files (with diff preview) | **Yes** |
+| `/adr <title>` | Record a new Architecture Decision | **Yes** |
+| `/diagram` | Insert a Mermaid context diagram in active file | **Yes** |
+| `/graph` | Generate full vault dependency graph | **Yes** |
+| `/c4` | Generate C4 model diagram (Mermaid) | No |
+| `/sizing` | Capacity & cost estimation | No |
+| `/timeline` | Gantt chart from roadmap | No |
+| `/archimate` | Export to ArchiMate 3.2 XML | **Yes** |
+| `/drawio` | Export to Draw.io (As-Is / Target / Migration) | **Yes** |
+| `/new <name>` | Scaffold a new TOGAF vault | **Yes** |
+| `/switch` | Switch active vault | No |
+
+**Flags:** Append `--dry-run` or `--preview` to any `/update` command to preview changes without writing. Append `--no-analysis` to `/archimate`, `/drawio`, or `/todo` to skip AI commentary.
 
 ## Usage Examples
 
@@ -380,8 +453,16 @@ Browses vault files grouped by TOGAF ADM phase. Each file item has three inline 
 | 💬 | Ask Copilot to analyze the file (`/analyze`) |
 | 👁️ | Open the file in Split Preview (editor + rendered Markdown side-by-side) |
 
+**Search / Filter:** Click the 🔍 icon in the Vault Explorer title bar (or run `archipilot: Search / Filter Vault Files` from the Command Palette) to filter files by name or content. Leave the input empty to clear the filter.
+
 ### Quick Actions
 Clickable shortcuts for the most common commands — no need to type in chat.
+
+**Customization:** Hide actions you don't use by adding their label or `/command` shortcut to the `archipilot.hiddenQuickActions` setting. For example:
+
+```json
+"archipilot.hiddenQuickActions": ["Sizing Catalogue", "/sizing", "Export to Draw.io"]
+```
 
 ### Architecture Health
 A live linter that scans the vault and flags issues without running any AI:
@@ -595,6 +676,7 @@ The `@architect` agent reads this metadata to understand document maturity and o
 |---------|---------|-------------|
 | `archipilot.vaultPath` | `""` | Path to the active vault folder (auto-detected if empty) |
 | `archipilot.projectsRoot` | `"architectures"` | Folder (relative to workspace root) where `/new` creates vaults and where discovery scans |
+| `archipilot.hiddenQuickActions` | `[]` | List of Quick Action labels or `/command` shortcuts to hide from the sidebar |
 
 ## Architecture
 
@@ -632,6 +714,151 @@ src/
 | **Audit log** | Every mutation logged to `.archipilot/audit.log` (JSONL) |
 | **Schema validation** | Commands validated for required fields, safe paths, known types |
 | **Confidence markers** | LLM prefixes extrapolations with ⚠️ to reduce hallucination risk |
+
+## Quick-Start for Non-TOGAF Users
+
+You don't need to be a TOGAF expert to use archipilot. Here's how to get productive in 5 minutes:
+
+### 1. Scaffold a vault
+
+```
+@architect /new My-First-Architecture
+```
+
+This creates 27 template files covering all architecture domains. Don't worry about the naming — the prefixes (`A1_`, `B1_`, `C1_`, etc.) are just a filing convention.
+
+### 2. Start with what you know
+
+- **Business goals?** → Edit `A1_Architecture_Vision.md` — write your project scope and drivers in plain English
+- **Applications / systems?** → Edit `C1_Application_Architecture.md` — list the systems involved
+- **Decisions to make?** → Type `@architect /adr Should we use Kafka or RabbitMQ?`
+- **Risks?** → Edit `X2_Risk_Issue_Register.md` — add rows to the table
+
+### 3. Let archipilot guide you
+
+```
+@architect /todo     ← "What should I work on next?"
+@architect /status   ← "How complete is my architecture?"
+@architect /review   ← "Where are the quality gaps?"
+```
+
+### 4. Evolve incrementally
+
+You don't need to fill every file before getting value. Start with Vision → Business Scenarios → Application Architecture → Decisions. The `/todo` command will tell you what's missing.
+
+### Mental model
+
+Think of the vault as a **structured notebook** for your architecture. Each file is a chapter. WikiLinks (`[[filename]]`) are cross-references. archipilot reads the whole notebook so it can answer questions, find inconsistencies, and suggest next steps.
+
+---
+
+## Interactive Tutorial
+
+archipilot includes a built-in **Getting Started walkthrough** inside VS Code:
+
+1. Open the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`)
+2. Type **"Get Started with archipilot"**
+3. Follow the 4 guided steps:
+
+| Step | What you'll learn |
+|------|-------------------|
+| **Create a Vault** | Scaffold your first TOGAF project with `/new` |
+| **Check Status** | Read the health dashboard with `/status` |
+| **Analyze Impact** | Ask what-if questions with `/analyze` |
+| **Update Vault** | Make governed changes with `/update` |
+
+### Suggested Learning Path
+
+| Session | Goal | Commands to try |
+|---------|------|-----------------|
+| Day 1 | Set up & explore | `/new`, `/status`, free-form questions |
+| Day 2 | Capture decisions | `/adr`, `/decide` |
+| Day 3 | Impact & risk | `/analyze`, `/todo` |
+| Day 4 | Diagrams & exports | `/diagram`, `/graph`, `/c4` |
+| Day 5 | Governance | `/review`, `/gate`, `/update` |
+| Day 6 | Enterprise tooling | `/archimate`, `/drawio`, `/timeline` |
+
+> **Tip:** Each session takes 15–30 minutes. By the end of the week you'll have a working architecture repository.
+
+---
+
+## TOGAF Glossary
+
+Quick reference for TOGAF terms used throughout archipilot. You don't need to memorise these — they're here when you need them.
+
+| Term | Definition | Where it appears in archipilot |
+|------|------------|-------------------------------|
+| **ADM** | Architecture Development Method — TOGAF's iterative cycle (Phases A–H) for developing enterprise architecture | File prefixes (`A1_`, `B1_`, …), sidebar phase groups |
+| **ADR** | Architecture Decision Record — a structured log entry capturing context, options, and rationale for a decision | `X1_ADR_Decision_Log.md`, `/adr`, `/decide` |
+| **ABB** | Abstract Building Block — a conceptual component (e.g. "Identity Provider") | `E1_Solutions_Building_Blocks.md` |
+| **SBB** | Solution Building Block — a concrete product filling an ABB (e.g. "Azure AD B2C") | `E1_Solutions_Building_Blocks.md` |
+| **ArchiMate** | A modelling language for enterprise architecture (ISO/IEC/IEEE 42010 compliant) | `/archimate` export |
+| **Baseline** | The current (as-is) state of the architecture | B1, C1, D1 files; Draw.io "As-Is" view |
+| **Target** | The desired future (to-be) state | B1, C1, D1 files; Draw.io "Target" view |
+| **Gap Analysis** | Comparison of baseline vs target to identify what must change | B1, C1, D1 files |
+| **Capability** | A business ability (e.g. "Customer Onboarding") independent of how it's implemented | `B2_Business_Capability_Catalog.md` |
+| **Deliverable** | A formally reviewed architecture work product | YAML `artifact_type: deliverable` |
+| **Phase Gate** | A governance checkpoint where an ADM phase is assessed for readiness before proceeding | `/gate` command |
+| **Stakeholder** | Anyone affected by or having authority over the architecture | `A2_Stakeholder_Map.md` |
+| **Traceability** | End-to-end linking from business driver → requirement → component → decision → risk | `X5_Traceability_Matrix.md` |
+| **RACI** | Responsible / Accountable / Consulted / Informed matrix | `A2_Stakeholder_Map.md` |
+| **NFR** | Non-Functional Requirement (performance, security, scalability, etc.) | `R1_Architecture_Requirements.md` |
+| **Work Package** | A defined chunk of delivery work in the migration roadmap | `F1_Architecture_Roadmap.md` |
+| **WikiLink** | Obsidian-style `[[cross-reference]]` between vault files | Used everywhere for traceability |
+
+---
+
+## FAQ
+
+### Getting Started
+
+**Q: Do I need an Obsidian license?**
+A: No. archipilot reads plain Markdown files — it doesn't require Obsidian itself. You can use any editor. The vault structure and `[[WikiLinks]]` follow Obsidian conventions, but the files are standard `.md`.
+
+**Q: Do I need to know TOGAF?**
+A: No. See the [Quick-Start for Non-TOGAF Users](#quick-start-for-non-togaf-users) section. The templates provide structure; archipilot guides you on what to fill in next.
+
+**Q: What's the minimum vault to start getting value?**
+A: A vault with just `A1_Architecture_Vision.md` and `X1_ADR_Decision_Log.md` is enough for free-form Q&A and decision tracking. Use `/new` to scaffold a full set of 27 files if you want the complete framework.
+
+### Using Commands
+
+**Q: What's the difference between `/analyze` and `/review`?**
+A: `/analyze` answers a specific what-if question ("What if we drop the API Gateway?"). `/review` performs a comprehensive quality and completeness assessment of the entire vault.
+
+**Q: Can I undo a `/update`?**
+A: Yes. Every write creates a backup in `.archipilot/backups/` with a timestamp. You can also use `--dry-run` to preview before applying. The audit log (`.archipilot/audit.log`) records every mutation.
+
+**Q: Why does `/status` show "Draft" for files I've edited?**
+A: The status comes from the YAML front matter `status:` field. Use `@architect /update Bump A1_Architecture_Vision status to review` to update it through governance.
+
+**Q: Can I use archipilot without GitHub Copilot?**
+A: No — archipilot is a Copilot Chat Participant and requires an active GitHub Copilot subscription. The LLM calls go through Copilot's API.
+
+### Exports & Diagrams
+
+**Q: Which tools can open the ArchiMate export?**
+A: Archi (free, open-source), BiZZdesign, Sparx EA, ADOIT, and any tool supporting the ArchiMate 3.2 Open Exchange Format.
+
+**Q: The Mermaid diagrams don't render in my editor. What do I need?**
+A: Install the [Markdown Mermaid](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid) VS Code extension. For `.mermaid` files, install [Mermaid Preview](https://marketplace.visualstudio.com/items?itemName=vstirbu.vscode-mermaid-preview).
+
+**Q: Can I export to PowerPoint or Confluence?**
+A: Not directly. Export to Draw.io (`.drawio`) and then use Draw.io's built-in PowerPoint/Confluence export, or export ArchiMate XML and import into your enterprise tooling.
+
+### Vault Management
+
+**Q: Can multiple people work on the same vault?**
+A: Yes — the vault is just a folder of Markdown files. Use Git for version control, branches, and merge. The YAML front matter tracks `last_modified` and `owner` for coordination.
+
+**Q: How do I archive a completed architecture?**
+A: Set all document statuses to `approved`, run `/review` for a final quality check, then commit the vault to Git with a release tag. You can keep it in the workspace as a read-only reference.
+
+**Q: What happens if I rename or move vault files?**
+A: WikiLinks will break. Run `/todo` or check the Architecture Health sidebar — it detects broken links. Use `/update` to fix cross-references after renaming.
+
+**Q: Can I add custom files to the vault?**
+A: Yes. Any `.md` file in the vault folder is included in context. Follow the prefix convention (e.g. `C4_API_Catalog.md`) so the sidebar groups it correctly, and add a WikiLink from `00_Architecture_Repository.md`.
 
 ## Contributing
 

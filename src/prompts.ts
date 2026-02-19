@@ -218,7 +218,10 @@ ${vaultContext}
 }
 
 /** C4 MODEL MODE – generate C4 architecture diagrams */
-export function buildC4Prompt(vaultContext: string): string {
+export function buildC4Prompt(vaultContext: string, scaffoldMd?: string): string {
+  const scaffoldBlock = scaffoldMd
+    ? `\n\n<deterministic_scaffold>\nThe following C4 scaffold was extracted deterministically from the vault.\nUse this as your primary data source. Refine, enrich, and correct — do not re-invent from scratch.\n\n${scaffoldMd}\n</deterministic_scaffold>\n`
+    : '';
   return `${CORE_IDENTITY}
 MODE: C4 MODEL GENERATION
 Generate a C4 model based on the architecture vault. Use the Mermaid diagram syntax so diagrams render natively in Obsidian and VS Code.
@@ -248,6 +251,7 @@ C4Context
   Rel(sys, ext, "Calls API")
 \`\`\`
 
+${scaffoldBlock}
 ---
 <vault_content>
 ${vaultContext}
@@ -257,7 +261,10 @@ ${vaultContext}
 }
 
 /** SIZING MODE – generate sizing catalogue */
-export function buildSizingPrompt(vaultContext: string): string {
+export function buildSizingPrompt(vaultContext: string, scaffoldMd?: string): string {
+  const scaffoldBlock = scaffoldMd
+    ? `\n\n<deterministic_scaffold>\nThe following sizing scaffold was extracted deterministically from the vault.\nUse this as your primary data source. Fill in TBD values, refine estimates, and add missing components — do not re-invent from scratch.\n\n${scaffoldMd}\n</deterministic_scaffold>\n`
+    : '';
   return `${CORE_IDENTITY}
 MODE: SIZING CATALOGUE
 Generate a comprehensive sizing catalogue for the architecture defined in the vault.
@@ -286,7 +293,7 @@ OUTPUT FORMAT:
 - Include a summary table at the top.
 - Flag any items that need stakeholder input.
 - If the user asks to save, output a CREATE_FILE command for a new vault file (e.g. \`X4_Sizing_Catalogue.md\`).
-
+${scaffoldBlock}
 ---
 <vault_content>
 ${vaultContext}
@@ -296,7 +303,10 @@ ${vaultContext}
 }
 
 /** TIMELINE MODE – generate delivery timeline */
-export function buildTimelinePrompt(vaultContext: string): string {
+export function buildTimelinePrompt(vaultContext: string, scaffoldMd?: string): string {
+  const scaffoldBlock = scaffoldMd
+    ? `\n\n<deterministic_scaffold>\nThe following timeline scaffold was extracted deterministically from the vault.\nUse this as your primary data source. Refine dates, validate dependencies, and fill gaps — do not re-invent from scratch.\nIf an existing Gantt chart is included, update it rather than generating from scratch.\n\n${scaffoldMd}\n</deterministic_scaffold>\n`
+    : '';
   return `${CORE_IDENTITY}
 MODE: TIMELINE GENERATION
 Generate a delivery timeline based on the roadmap and architecture vault.
@@ -340,7 +350,7 @@ MERMAID GANTT RULES (strict — violations cause parse errors):
   - **Open questions** that could affect timing (from X3_Open_Questions.md)
 
 - If the user asks to save, output a CREATE_FILE command for a timeline file (e.g. \`F3_Timeline.md\`).
-
+${scaffoldBlock}
 ---
 <vault_content>
 ${vaultContext}
@@ -460,6 +470,82 @@ Your task:
 5. **Quality score** – Rate the model completeness on a 1-10 scale with justification.
 
 Be concise and actionable. Use tables where appropriate.
+
+---
+<vault_content>
+${vaultContext}
+</vault_content>
+---
+`;
+}
+
+/** REVIEW MODE – automated architecture review */
+export function buildReviewPrompt(vaultContext: string): string {
+  return `${CORE_IDENTITY}
+MODE: ARCHITECTURE REVIEW
+You are performing an automated architecture review of the vault.
+
+For each file (or the specific file requested), assess:
+
+1. **Completeness** – Are all expected sections populated? Any TBD / placeholder content remaining?
+2. **TOGAF Compliance** – Does the artifact meet the expected TOGAF ADM deliverable standard for its phase?
+3. **Cross-references** – Are WikiLinks valid? Are related artifacts properly referenced?
+4. **Metadata Quality** – Is YAML front matter complete (version, status, owner, dates)?
+5. **Content Quality** – Is the content specific and actionable, or vague and generic?
+6. **Governance Alignment** – Does the content align with stated principles (P1) and governance framework (P2)?
+7. **Traceability** – Can you trace from business drivers → requirements → architecture → decisions?
+
+OUTPUT FORMAT:
+For each reviewed file, produce:
+- A **scorecard** (1-5 stars per dimension)
+- **Specific findings** (what's missing or weak)
+- **Recommended actions** (concrete improvements)
+
+End with an overall vault maturity summary.
+
+Be direct and constructive. Architects value specificity over politeness.
+
+---
+<vault_content>
+${vaultContext}
+</vault_content>
+---
+`;
+}
+
+/** GATE MODE – phase gate checklist assessment */
+export function buildGatePrompt(vaultContext: string): string {
+  return `${CORE_IDENTITY}
+MODE: PHASE GATE ASSESSMENT
+You are evaluating whether a TOGAF ADM phase has met its exit criteria and is ready to proceed.
+
+For each phase requested (or all phases), assess:
+
+1. **Required Deliverables** – Are all expected artifacts present and non-draft?
+   - Phase A: Architecture Vision, Stakeholder Map, Value Chain
+   - Phase B: Business Architecture, Capability Catalog, Business Scenarios
+   - Phase C: Application Architecture, Data Architecture, Portfolio Catalog
+   - Phase D: Technology Architecture, Standards Catalog
+   - Phase E: Building Blocks, Integration Strategy
+   - Phase F: Roadmap, Migration Plan
+   - Phase G: Compliance Assessment, Contracts
+   - Phase H: Change Request Log
+
+2. **Quality Gates** – For each deliverable:
+   - Status must be at least "review" (not "draft")
+   - Owner must be assigned (not TBD)
+   - Version must be > 0.1.0
+   - Key sections must be populated
+
+3. **Dependency Check** – Are prerequisite phases complete?
+4. **Open Items** – List blocking decisions, risks, or questions for the phase
+5. **Stakeholder Sign-off** – Are reviewers assigned?
+
+OUTPUT FORMAT:
+Produce a gate checklist table:
+| Phase | Deliverable | Status | Owner | Quality | Gate |
+
+End with a **GO / NO-GO recommendation** per phase with specific blockers listed.
 
 ---
 <vault_content>

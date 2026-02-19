@@ -18,6 +18,8 @@ import {
   buildArchimatePrompt,
   buildDrawioPrompt,
   buildTodoPrompt,
+  buildReviewPrompt,
+  buildGatePrompt,
 } from './prompts.js';
 import {
   exportToArchimate,
@@ -28,6 +30,18 @@ import {
   formatDrawioSummaryMarkdown,
   extractTodos,
   formatTodoMarkdown,
+  extractC4Scaffold,
+  formatC4ScaffoldMarkdown,
+  extractSizingScaffold,
+  formatSizingScaffoldMarkdown,
+  extractTimelineScaffold,
+  formatTimelineScaffoldMarkdown,
+  ADR_DEFAULT_CONTENT,
+  nextAdrId,
+  formatAdrEntry,
+  extractWikiLinks,
+  generateContextDiagramMermaid,
+  generateVaultGraphMermaid,
 } from './core/index.js';
 
 export class ArchitectParticipant {
@@ -90,6 +104,21 @@ export class ArchitectParticipant {
       return this._handleTodo(request, chatContext, stream, token);
     }
 
+    // ── Handle /c4 command (deterministic scaffold + LLM) ──
+    if (request.command === 'c4') {
+      return this._handleC4(request, chatContext, stream, token);
+    }
+
+    // ── Handle /sizing command (deterministic scaffold + LLM) ──
+    if (request.command === 'sizing') {
+      return this._handleSizing(request, chatContext, stream, token);
+    }
+
+    // ── Handle /timeline command (deterministic scaffold + LLM) ──
+    if (request.command === 'timeline') {
+      return this._handleTimeline(request, chatContext, stream, token);
+    }
+
     // ── Handle /adr command ──
     if (request.command === 'adr') {
       return this._handleADR(request, stream);
@@ -103,6 +132,26 @@ export class ArchitectParticipant {
     // ── Handle /graph command ──
     if (request.command === 'graph') {
       return this._handleGraph(stream);
+    }
+
+    // ── Handle /impact command ──
+    if (request.command === 'impact') {
+      return this._handleImpact(request, stream);
+    }
+
+    // ── Handle /status command (pre-computed dashboard) ──
+    if (request.command === 'status') {
+      return this._handleStatus(request, chatContext, stream, token);
+    }
+
+    // ── Handle /review command ──
+    if (request.command === 'review') {
+      return this._handleReview(request, chatContext, stream, token);
+    }
+
+    // ── Handle /gate command ──
+    if (request.command === 'gate') {
+      return this._handleGate(request, chatContext, stream, token);
     }
 
     // ── Ensure vault is loaded ──
@@ -132,18 +181,6 @@ export class ArchitectParticipant {
         break;
       case 'update':
         systemPrompt = buildUpdatePrompt(vaultContext);
-        break;
-      case 'status':
-        systemPrompt = buildStatusPrompt(vaultContext);
-        break;
-      case 'c4':
-        systemPrompt = buildC4Prompt(vaultContext);
-        break;
-      case 'sizing':
-        systemPrompt = buildSizingPrompt(vaultContext);
-        break;
-      case 'timeline':
-        systemPrompt = buildTimelinePrompt(vaultContext);
         break;
       default:
         systemPrompt = buildDefaultPrompt(vaultContext);
@@ -789,6 +826,198 @@ export class ArchitectParticipant {
   }
 
   /**
+   * Handle /c4 – deterministic C4 scaffold + optional LLM refinement.
+   */
+  private async _handleC4(
+    request: vscode.ChatRequest,
+    chatContext: vscode.ChatContext,
+    stream: vscode.ChatResponseStream,
+    token: vscode.CancellationToken
+  ): Promise<vscode.ChatResult> {
+    try {
+      await this._ensureVault(stream);
+    } catch {
+      stream.markdown(
+        '⚠️ **No architecture vault found.**\n\n' +
+          'Use `/switch` to select a vault folder, or set `archipilot.vaultPath` in settings.'
+      );
+      return {};
+    }
+
+    stream.progress('Extracting C4 model data from vault...');
+    const vaultInfo = await this._vaultManager.loadVault();
+    const vaultContext = this._vaultManager.buildContext();
+
+    // ── Step 1: Deterministic scaffold ──
+    stream.progress('Building C4 scaffold from components, integrations, and diagrams...');
+    const scaffold = extractC4Scaffold(vaultInfo.files);
+    const scaffoldMd = formatC4ScaffoldMarkdown(scaffold);
+
+    // ── Step 2: Show the scaffold ──
+    stream.markdown(scaffoldMd);
+
+    // ── Step 3: LLM refinement ──
+    const wantAnalysis = !request.prompt.includes('--no-analysis');
+
+    if (wantAnalysis && !token.isCancellationRequested) {
+      stream.progress('Generating C4 diagrams with AI...');
+
+      const systemPrompt = buildC4Prompt(vaultContext, scaffoldMd);
+      const messages: vscode.LanguageModelChatMessage[] = [
+        vscode.LanguageModelChatMessage.User(systemPrompt),
+      ];
+
+      const userPrompt = request.prompt.replace(/--no-analysis/g, '').trim() ||
+        'Generate C4 diagrams (System Context + Container) from the scaffold above.';
+      messages.push(vscode.LanguageModelChatMessage.Assistant('(ready)'));
+      messages.push(vscode.LanguageModelChatMessage.User(userPrompt));
+
+      try {
+        const chatResponse = await request.model.sendRequest(messages, {}, token);
+        stream.markdown('\n\n---\n\n### 🧠 AI C4 Model\n\n');
+        for await (const fragment of chatResponse.text) {
+          stream.markdown(fragment);
+        }
+      } catch (err) {
+        if (err instanceof vscode.LanguageModelError) {
+          stream.markdown(`\n\n⚠️ **LLM Error:** ${err.message}`);
+        }
+      }
+    }
+
+    stream.markdown(`\n\n---\n*Vault: ${vaultInfo.name} (${vaultInfo.fileCount} files) — C4 Model*`);
+    return {};
+  }
+
+  /**
+   * Handle /sizing – deterministic sizing scaffold + optional LLM refinement.
+   */
+  private async _handleSizing(
+    request: vscode.ChatRequest,
+    chatContext: vscode.ChatContext,
+    stream: vscode.ChatResponseStream,
+    token: vscode.CancellationToken
+  ): Promise<vscode.ChatResult> {
+    try {
+      await this._ensureVault(stream);
+    } catch {
+      stream.markdown(
+        '⚠️ **No architecture vault found.**\n\n' +
+          'Use `/switch` to select a vault folder, or set `archipilot.vaultPath` in settings.'
+      );
+      return {};
+    }
+
+    stream.progress('Extracting sizing data from vault...');
+    const vaultInfo = await this._vaultManager.loadVault();
+    const vaultContext = this._vaultManager.buildContext();
+
+    // ── Step 1: Deterministic scaffold ──
+    stream.progress('Building sizing scaffold from components, NFRs, and scenarios...');
+    const scaffold = extractSizingScaffold(vaultInfo.files);
+    const scaffoldMd = formatSizingScaffoldMarkdown(scaffold);
+
+    // ── Step 2: Show the scaffold ──
+    stream.markdown(scaffoldMd);
+
+    // ── Step 3: LLM refinement ──
+    const wantAnalysis = !request.prompt.includes('--no-analysis');
+
+    if (wantAnalysis && !token.isCancellationRequested) {
+      stream.progress('Generating sizing estimates with AI...');
+
+      const systemPrompt = buildSizingPrompt(vaultContext, scaffoldMd);
+      const messages: vscode.LanguageModelChatMessage[] = [
+        vscode.LanguageModelChatMessage.User(systemPrompt),
+      ];
+
+      const userPrompt = request.prompt.replace(/--no-analysis/g, '').trim() ||
+        'Fill in sizing estimates for TBD values and provide cost analysis based on the scaffold above.';
+      messages.push(vscode.LanguageModelChatMessage.Assistant('(ready)'));
+      messages.push(vscode.LanguageModelChatMessage.User(userPrompt));
+
+      try {
+        const chatResponse = await request.model.sendRequest(messages, {}, token);
+        stream.markdown('\n\n---\n\n### 🧠 AI Sizing Analysis\n\n');
+        for await (const fragment of chatResponse.text) {
+          stream.markdown(fragment);
+        }
+      } catch (err) {
+        if (err instanceof vscode.LanguageModelError) {
+          stream.markdown(`\n\n⚠️ **LLM Error:** ${err.message}`);
+        }
+      }
+    }
+
+    stream.markdown(`\n\n---\n*Vault: ${vaultInfo.name} (${vaultInfo.fileCount} files) — Sizing Catalogue*`);
+    return {};
+  }
+
+  /**
+   * Handle /timeline – deterministic timeline scaffold + optional LLM refinement.
+   */
+  private async _handleTimeline(
+    request: vscode.ChatRequest,
+    chatContext: vscode.ChatContext,
+    stream: vscode.ChatResponseStream,
+    token: vscode.CancellationToken
+  ): Promise<vscode.ChatResult> {
+    try {
+      await this._ensureVault(stream);
+    } catch {
+      stream.markdown(
+        '⚠️ **No architecture vault found.**\n\n' +
+          'Use `/switch` to select a vault folder, or set `archipilot.vaultPath` in settings.'
+      );
+      return {};
+    }
+
+    stream.progress('Extracting timeline data from vault...');
+    const vaultInfo = await this._vaultManager.loadVault();
+    const vaultContext = this._vaultManager.buildContext();
+
+    // ── Step 1: Deterministic scaffold ──
+    stream.progress('Building timeline scaffold from roadmap, milestones, and risks...');
+    const scaffold = extractTimelineScaffold(vaultInfo.files);
+    const scaffoldMd = formatTimelineScaffoldMarkdown(scaffold);
+
+    // ── Step 2: Show the scaffold ──
+    stream.markdown(scaffoldMd);
+
+    // ── Step 3: LLM refinement ──
+    const wantAnalysis = !request.prompt.includes('--no-analysis');
+
+    if (wantAnalysis && !token.isCancellationRequested) {
+      stream.progress('Generating Gantt timeline with AI...');
+
+      const systemPrompt = buildTimelinePrompt(vaultContext, scaffoldMd);
+      const messages: vscode.LanguageModelChatMessage[] = [
+        vscode.LanguageModelChatMessage.User(systemPrompt),
+      ];
+
+      const userPrompt = request.prompt.replace(/--no-analysis/g, '').trim() ||
+        'Generate a Mermaid Gantt chart and critical path analysis from the scaffold above.';
+      messages.push(vscode.LanguageModelChatMessage.Assistant('(ready)'));
+      messages.push(vscode.LanguageModelChatMessage.User(userPrompt));
+
+      try {
+        const chatResponse = await request.model.sendRequest(messages, {}, token);
+        stream.markdown('\n\n---\n\n### 🧠 AI Timeline Analysis\n\n');
+        for await (const fragment of chatResponse.text) {
+          stream.markdown(fragment);
+        }
+      } catch (err) {
+        if (err instanceof vscode.LanguageModelError) {
+          stream.markdown(`\n\n⚠️ **LLM Error:** ${err.message}`);
+        }
+      }
+    }
+
+    stream.markdown(`\n\n---\n*Vault: ${vaultInfo.name} (${vaultInfo.fileCount} files) — Timeline*`);
+    return {};
+  }
+
+  /**
    * Handle /adr – record a new Architecture Decision Record.
    */
   private async _handleADR(
@@ -820,28 +1049,12 @@ export class ArchitectParticipant {
       const bytes = await vscode.workspace.fs.readFile(decisionLogUri);
       content = Buffer.from(bytes).toString('utf-8');
     } catch {
-      content = `---\ntype: decision-log\nstatus: draft\n---\n\n# Architecture Decision Log\n\n`;
+      content = ADR_DEFAULT_CONTENT;
     }
 
-    const matches = content.match(/AD-(\d+)/g);
-    let nextId = 1;
-    if (matches) {
-      const ids = matches.map((m) => parseInt(m.split('-')[1], 10));
-      nextId = Math.max(...ids) + 1;
-    }
-    const idString = `AD-${String(nextId).padStart(2, '0')}`;
+    const idString = nextAdrId(content);
     const date = new Date().toISOString().split('T')[0];
-
-    const newEntry =
-      `\n## ${idString} — ${title}\n\n` +
-      `| Field | Value |\n|-------|-------|\n` +
-      `| **Status** | 🟡 Proposed |\n` +
-      `| **Date Raised** | ${date} |\n` +
-      `| **Owner** | TBD |\n` +
-      `| **Phase** | Cross-phase |\n\n` +
-      `### Context\n_Why do we need to make this decision?_\n\n` +
-      `### Options\n- **Option A**\n- **Option B**\n\n` +
-      `### Decision\n_Pending..._\n`;
+    const newEntry = formatAdrEntry(idString, title, date);
 
     await vscode.workspace.fs.writeFile(
       decisionLogUri,
@@ -884,13 +1097,7 @@ export class ArchitectParticipant {
     const text = editor.document.getText();
     const fileName = editor.document.fileName.split('/').pop()?.replace(/\.md$/, '') || 'Current';
 
-    const regex = /\[\[(.*?)\]\]/g;
-    const links = new Set<string>();
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-      const link = match[1].split('|')[0].split('#')[0].trim();
-      if (link && link !== fileName) { links.add(link); }
-    }
+    const links = extractWikiLinks(text, fileName);
 
     if (links.size === 0) {
       stream.markdown(
@@ -900,11 +1107,7 @@ export class ArchitectParticipant {
       return {};
     }
 
-    const safeId = (s: string) => `n_${s.replace(/[^a-zA-Z0-9]/g, '_')}`;
-    let mermaid = `flowchart LR\n    ${safeId(fileName)}["${fileName}"]\n    style ${safeId(fileName)} fill:#6366f1,color:#fff,stroke:#4338ca\n`;
-    links.forEach((link) => {
-      mermaid += `    ${safeId(fileName)} --> ${safeId(link)}["${link}"]\n`;
-    });
+    const mermaid = generateContextDiagramMermaid(fileName, links);
 
     const insertText = `\n\n## Context Diagram\n\n\`\`\`mermaid\n${mermaid}\`\`\`\n`;
     await editor.edit((eb) => {
@@ -937,26 +1140,7 @@ export class ArchitectParticipant {
     const vaultInfo = await this._vaultManager.loadVault();
     const vaultPath = this._vaultManager.activeVaultPath!;
 
-    const safeId = (s: string) => `n_${s.replace(/[^a-zA-Z0-9]/g, '_')}`;
-    const allNames = new Set(vaultInfo.files.map((f) => f.name.replace(/\.md$/, '')));
-    const edgeSet = new Set<string>();
-
-    for (const file of vaultInfo.files) {
-      const from = file.name.replace(/\.md$/, '');
-      const regex = /\[\[(.*?)\]\]/g;
-      let match;
-      while ((match = regex.exec(file.content)) !== null) {
-        const to = match[1].split('|')[0].split('#')[0].trim();
-        if (to && to !== from && allNames.has(to)) {
-          edgeSet.add(`    ${safeId(from)} --> ${safeId(to)}`);
-        }
-      }
-    }
-
-    const nodeDecls = Array.from(allNames)
-      .map((n) => `    ${safeId(n)}["${n}"]`)
-      .join('\n');
-    const mermaid = `flowchart LR\n${nodeDecls}\n${[...edgeSet].join('\n')}`;
+    const { mermaid, nodeCount, edgeCount } = generateVaultGraphMermaid(vaultInfo.files);
 
     const graphUri = vscode.Uri.file(`${vaultPath}/Vault-Graph.mermaid`);
     await vscode.workspace.fs.writeFile(graphUri, Buffer.from(mermaid, 'utf-8'));
@@ -964,12 +1148,328 @@ export class ArchitectParticipant {
     const preview = mermaid.length > 2000 ? mermaid.slice(0, 2000) + '\n    ... (truncated for chat)' : mermaid;
 
     stream.markdown(
-      `✅ **Vault Graph generated** — ${vaultInfo.fileCount} nodes, ${edgeSet.size} edges\n\n` +
+      `✅ **Vault Graph generated** — ${nodeCount} nodes, ${edgeCount} edges\n\n` +
       `Saved to \`Vault-Graph.mermaid\` in your vault root.\n\n` +
       `> 💡 Install the **Mermaid Preview** extension to render this file visually.\n\n` +
       `\`\`\`mermaid\n${preview}\n\`\`\``
     );
     stream.anchor(graphUri, 'Vault-Graph.mermaid');
+
+    return {};
+  }
+
+  /**
+   * Handle /status – pre-computed vault dashboard with optional LLM follow-up.
+   */
+  private async _handleStatus(
+    request: vscode.ChatRequest,
+    chatContext: vscode.ChatContext,
+    stream: vscode.ChatResponseStream,
+    token: vscode.CancellationToken
+  ): Promise<vscode.ChatResult> {
+    try {
+      await this._ensureVault(stream);
+    } catch {
+      stream.markdown(
+        '⚠️ **No architecture vault found.**\n\n' +
+          'Use `/switch` to select a vault folder, or set `archipilot.vaultPath` in settings.'
+      );
+      return {};
+    }
+
+    stream.progress('Computing vault dashboard...');
+    const vaultInfo = await this._vaultManager.loadVault();
+
+    // ── Pre-compute structured data ──
+    const summary = extractTodos(vaultInfo.files);
+
+    // Document maturity breakdown
+    const statusCounts: Record<string, number> = {};
+    for (const f of vaultInfo.files) {
+      const fmMatch = f.content.match(/^---\n([\s\S]*?)\n---/);
+      let status = 'unknown';
+      if (fmMatch) {
+        const sm = fmMatch[1].match(/^status:\s*(.+)$/m);
+        if (sm) status = sm[1].trim().toLowerCase();
+      }
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    }
+
+    // Build dashboard markdown
+    const lines: string[] = [];
+    lines.push(`## 📊 Architecture Vault Dashboard\n`);
+    lines.push(`**Vault:** ${vaultInfo.name}  ·  **Files:** ${vaultInfo.fileCount}\n`);
+
+    // Document maturity table
+    lines.push(`### Document Maturity\n`);
+    lines.push(`| Status | Count |`);
+    lines.push(`|--------|-------|`);
+    for (const [st, count] of Object.entries(statusCounts).sort((a, b) => b[1] - a[1])) {
+      const icon = st.includes('approved') ? '✅' : st.includes('draft') ? '📝' : st.includes('review') ? '👁️' : '❓';
+      lines.push(`| ${icon} ${st} | ${count} |`);
+    }
+    lines.push(``);
+
+    // Key metrics
+    const decisions = summary.byCategoryCount['decision'] || 0;
+    const pendingDecisions = summary.byCategoryCount['decision-pending'] || 0;
+    const risks = summary.byCategoryCount['risk'] || 0;
+    const risksNoOwner = summary.byCategoryCount['risk-no-owner'] || 0;
+    const questions = summary.byCategoryCount['question'] || 0;
+    const brokenLinks = summary.byCategoryCount['broken-link'] || 0;
+
+    lines.push(`### Key Metrics\n`);
+    lines.push(`| Metric | Count | Status |`);
+    lines.push(`|--------|-------|--------|`);
+    lines.push(`| Open Decisions | ${decisions} | ${decisions > 3 ? '🔴 Needs attention' : decisions > 0 ? '🟡 Review' : '✅ Clear'} |`);
+    lines.push(`| Proposed Decisions | ${pendingDecisions} | ${pendingDecisions > 5 ? '🔴' : pendingDecisions > 0 ? '🟡' : '✅'} |`);
+    lines.push(`| Open Risks | ${risks} | ${risks > 5 ? '🔴' : risks > 0 ? '🟡' : '✅'} |`);
+    lines.push(`| Risks without Owners | ${risksNoOwner} | ${risksNoOwner > 0 ? '🔴 Assign ASAP' : '✅'} |`);
+    lines.push(`| Open Questions | ${questions} | ${questions > 10 ? '🟡' : '✅'} |`);
+    lines.push(`| Broken WikiLinks | ${brokenLinks} | ${brokenLinks > 0 ? '🟡 Fix references' : '✅'} |`);
+    lines.push(`| TBD Ownership | ${summary.tbd_ownership_count} | ${summary.tbd_ownership_count > 3 ? '🔴' : summary.tbd_ownership_count > 0 ? '🟡' : '✅'} |`);
+    lines.push(`| **Total Open Items** | **${summary.totalCount}** | |`);
+    lines.push(``);
+
+    // Phase distribution
+    const phaseKeys = Object.keys(summary.byPhaseCount).sort();
+    if (phaseKeys.length > 0) {
+      lines.push(`### Open Items by Phase\n`);
+      lines.push(`| Phase | Count |`);
+      lines.push(`|-------|-------|`);
+      for (const phase of phaseKeys) {
+        lines.push(`| ${phase} | ${summary.byPhaseCount[phase]} |`);
+      }
+      lines.push(``);
+    }
+
+    const dashboardMd = lines.join('\n');
+    stream.markdown(dashboardMd);
+
+    // ── Optional LLM follow-up if the user asked a specific question ──
+    const userPrompt = request.prompt.trim();
+    const wantAnalysis = userPrompt.length > 0 && !userPrompt.includes('--no-analysis');
+
+    if (wantAnalysis && !token.isCancellationRequested) {
+      stream.progress('Analyzing vault status...');
+      const vaultContext = this._vaultManager.buildContext();
+      const systemPrompt = buildStatusPrompt(vaultContext);
+      const messages: vscode.LanguageModelChatMessage[] = [
+        vscode.LanguageModelChatMessage.User(systemPrompt),
+        vscode.LanguageModelChatMessage.Assistant(dashboardMd),
+        vscode.LanguageModelChatMessage.User(userPrompt),
+      ];
+
+      try {
+        const chatResponse = await request.model.sendRequest(messages, {}, token);
+        stream.markdown('\n\n---\n\n### 🧠 AI Analysis\n\n');
+        for await (const fragment of chatResponse.text) {
+          stream.markdown(fragment);
+        }
+      } catch (err) {
+        if (err instanceof vscode.LanguageModelError) {
+          stream.markdown(`\n\n⚠️ **LLM Analysis Error:** ${err.message}`);
+        }
+      }
+    }
+
+    stream.markdown(`\n\n---\n*Vault: ${vaultInfo.name} (${vaultInfo.fileCount} files)*`);
+    return {};
+  }
+
+  /**
+   * Handle /review – automated file-level architecture review.
+   * Uses AI to assess quality, completeness, and TOGAF compliance of vault files.
+   */
+  private async _handleReview(
+    request: vscode.ChatRequest,
+    chatContext: vscode.ChatContext,
+    stream: vscode.ChatResponseStream,
+    token: vscode.CancellationToken
+  ): Promise<vscode.ChatResult> {
+    try {
+      await this._ensureVault(stream);
+    } catch {
+      stream.markdown(
+        '⚠️ **No architecture vault found.**\n\n' +
+          'Use `/switch` to select a vault folder, or set `archipilot.vaultPath` in settings.'
+      );
+      return {};
+    }
+
+    stream.progress('Loading vault for architecture review...');
+    const vaultInfo = await this._vaultManager.loadVault();
+    const vaultContext = this._vaultManager.buildContext();
+
+    // Determine scope: specific file or full vault
+    const userPrompt = request.prompt.trim();
+    const targetFile = userPrompt
+      ? vaultInfo.files.find((f) => f.name.toLowerCase().includes(userPrompt.toLowerCase()))
+      : undefined;
+
+    const scope = targetFile
+      ? `Review the file "${targetFile.name}" in detail.`
+      : userPrompt || 'Perform a full architecture review of the vault.';
+
+    stream.progress('Reviewing architecture quality...');
+    const systemPrompt = buildReviewPrompt(vaultContext);
+    const messages: vscode.LanguageModelChatMessage[] = [
+      vscode.LanguageModelChatMessage.User(systemPrompt),
+      vscode.LanguageModelChatMessage.Assistant('(ready)'),
+      vscode.LanguageModelChatMessage.User(scope),
+    ];
+
+    try {
+      const chatResponse = await request.model.sendRequest(messages, {}, token);
+      for await (const fragment of chatResponse.text) {
+        stream.markdown(fragment);
+      }
+    } catch (err) {
+      if (err instanceof vscode.LanguageModelError) {
+        stream.markdown(`\n\n⚠️ **LLM Error:** ${err.message}`);
+      } else {
+        throw err;
+      }
+    }
+
+    stream.markdown(`\n\n---\n*Vault: ${vaultInfo.name} (${vaultInfo.fileCount} files) — Architecture Review*`);
+    return {};
+  }
+
+  /**
+   * Handle /gate – phase gate checklist assessment.
+   * Evaluates whether a TOGAF ADM phase has met its exit criteria.
+   */
+  private async _handleGate(
+    request: vscode.ChatRequest,
+    chatContext: vscode.ChatContext,
+    stream: vscode.ChatResponseStream,
+    token: vscode.CancellationToken
+  ): Promise<vscode.ChatResult> {
+    try {
+      await this._ensureVault(stream);
+    } catch {
+      stream.markdown(
+        '⚠️ **No architecture vault found.**\n\n' +
+          'Use `/switch` to select a vault folder, or set `archipilot.vaultPath` in settings.'
+      );
+      return {};
+    }
+
+    stream.progress('Loading vault for gate assessment...');
+    const vaultInfo = await this._vaultManager.loadVault();
+    const vaultContext = this._vaultManager.buildContext();
+
+    // Extract phase from user prompt
+    const userPrompt = request.prompt.trim() || 'Assess all TOGAF ADM phases for gate readiness.';
+
+    stream.progress('Evaluating phase gate criteria...');
+    const systemPrompt = buildGatePrompt(vaultContext);
+    const messages: vscode.LanguageModelChatMessage[] = [
+      vscode.LanguageModelChatMessage.User(systemPrompt),
+      vscode.LanguageModelChatMessage.Assistant('(ready)'),
+      vscode.LanguageModelChatMessage.User(userPrompt),
+    ];
+
+    try {
+      const chatResponse = await request.model.sendRequest(messages, {}, token);
+      for await (const fragment of chatResponse.text) {
+        stream.markdown(fragment);
+      }
+    } catch (err) {
+      if (err instanceof vscode.LanguageModelError) {
+        stream.markdown(`\n\n⚠️ **LLM Error:** ${err.message}`);
+      } else {
+        throw err;
+      }
+    }
+
+    stream.markdown(`\n\n---\n*Vault: ${vaultInfo.name} (${vaultInfo.fileCount} files) — Phase Gate Assessment*`);
+    return {};
+  }
+
+  /**
+   * /impact <ID> — scan the entire vault for all cross-references to a TOGAF ID
+   * (decision, risk, question, work package, requirement, etc.) and return a
+   * structured impact chain showing every file and section that mentions it.
+   */
+  private async _handleImpact(
+    request: vscode.ChatRequest,
+    stream: vscode.ChatResponseStream,
+  ): Promise<vscode.ChatResult> {
+    // Extract the TOGAF ID from the prompt (e.g. AD-02, R-05, Q-12, WP-03)
+    const idMatch = request.prompt.match(/\b([A-Z]+-\d+)\b/);
+    if (!idMatch) {
+      stream.markdown(
+        '⚠️ **No valid ID found.**\n\n' +
+        'Usage: `/impact AD-02` or `/impact R-05`\n\n' +
+        'IDs must match the pattern `PREFIX-number` (e.g. `AD-02`, `R-05`, `WP-03`, `Q-12`).'
+      );
+      return {};
+    }
+    const targetId = idMatch[1];
+
+    const vaultPath = this._vaultManager.activeVaultPath;
+    if (!vaultPath) {
+      stream.markdown('⚠️ **No active vault.** Use `/switch` to select a vault folder first.');
+      return {};
+    }
+
+    stream.markdown(`🔍 **Impact chain for \`${targetId}\`** — scanning vault...\n\n`);
+
+    let vaultInfo;
+    try {
+      vaultInfo = await this._vaultManager.loadVault();
+    } catch {
+      stream.markdown('❌ Failed to load vault.');
+      return {};
+    }
+
+    interface Hit { file: string; section: string; line: string; }
+    const hits: Hit[] = [];
+
+    for (const f of vaultInfo.files) {
+      const lines = f.content.split('\n');
+      let currentSection = '(preamble)';
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        // Track current section heading
+        const headingMatch = line.match(/^#{1,3}\s+(.+)/);
+        if (headingMatch) {
+          currentSection = headingMatch[1].trim();
+        }
+        // Check if this line references the target ID
+        if (new RegExp(`\\b${targetId}\\b`).test(line)) {
+          const preview = line.trim().slice(0, 120);
+          hits.push({ file: f.name, section: currentSection, line: preview });
+        }
+      }
+    }
+
+    if (hits.length === 0) {
+      stream.markdown(`No references to **${targetId}** found in the vault.\n\n`);
+      stream.markdown('_Tip: Make sure the ID format is exact, e.g. `AD-02` not `ad-02`._');
+      return {};
+    }
+
+    // Group by file for cleaner output
+    const byFile = new Map<string, Hit[]>();
+    for (const h of hits) {
+      if (!byFile.has(h.file)) { byFile.set(h.file, []); }
+      byFile.get(h.file)!.push(h);
+    }
+
+    stream.markdown(
+      `Found **${hits.length} reference${hits.length === 1 ? '' : 's'}** to \`${targetId}\` across **${byFile.size} file${byFile.size === 1 ? '' : 's'}**:\n\n` +
+      `| File | Section | Context |\n` +
+      `|------|---------|--------|\n` +
+      [...byFile.entries()]
+        .map(([file, fileHits]) =>
+          fileHits.map((h) => `| \`${file}\` | ${h.section} | ${h.line.replace(/\|/g, '\\|')} |`).join('\n')
+        ).join('\n') +
+      '\n\n---\n\n' +
+      '_Use `@architect /decide` or `@architect /update` to act on any of these references._'
+    );
 
     return {};
   }

@@ -5,6 +5,51 @@ All notable changes to archipilot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2025-02-19
+
+### Added
+
+- **`/impact` command** — Scan the entire vault for cross-references to any TOGAF ID (e.g. `AD-02`, `R-05`, `WP-03`) and display a structured impact chain showing every file and section that mentions it.
+- **Architecture Health sidebar view** — Phase readiness scores (0–100 %) per ADM phase, metadata-gap detection, capability/scenario/contract/traceability gap extractors with 18 TODO categories.
+- **Shared diagram helpers** (`src/core/diagram-helpers.ts`) — Pure helper functions (`nextAdrId`, `formatAdrEntry`, `safeNodeId`, `extractWikiLinks`, `generateContextDiagramMermaid`, `generateVaultGraphMermaid`) used by both palette commands and chat handlers, eliminating duplicated logic.
+
+### Changed
+
+- **`features.ts` async I/O** — Replaced all synchronous `fs.readFileSync`/`fs.writeFileSync` with `vscode.workspace.fs` async API to avoid blocking the extension host.
+- **ADR/diagram/graph consolidation** — Both palette commands (`features.ts`) and chat handlers (`participant.ts`) now share the same core helpers, consistent node-ID sanitisation (`n_` prefix), and default owner (`TBD`).
+- **`ADD_DECISION` idempotency** — `updater.ts` now checks whether a `decision_id` already exists before writing, preventing duplicate entries.
+- **Audit log rotation** — `.archipilot/audit.log` automatically rotates after 2 000 entries, retaining up to 3 archived logs.
+- **VaultManager disposal** — Extension now pushes `vaultManager` into `context.subscriptions` so its `EventEmitter` is disposed on deactivate.
+- **Auto-detect error handling** — `autoDetectVault()` promise chain now has a `.catch()` to prevent unhandled rejection on startup.
+
+### Fixed
+
+- **Metadata-gap regex** — `extractMetadataGaps` and `yamlValue` used `\s` inside `new RegExp()` template literals, which silently matched literal `s` instead of whitespace. Fixed to `\\s`.
+
+## [0.7.0] - 2025-07-28
+
+### Added
+
+- **`/todo` command** — Scans the vault for actionable architecture TODOs (TBD placeholders, missing sections, unresolved questions, unsigned-off decisions, open risks, incomplete roadmap items, orphaned entities, sizing gaps, DrawIO portability items) and generates a prioritised markdown checklist grouped by ADM phase.
+- **`/drawio` command** — Export the active vault to a DrawIO XML file, with element classification and migration-status colour coding.
+- **`/adr` command** — Record a new Architecture Decision directly from the chat with auto-generated ID and template.
+- **`/diagram` command** — Generate a Mermaid context diagram from the active file's `[[WikiLinks]]`.
+- **`/graph` command** — Visualise the full vault as a Mermaid dependency graph saved to `Vault-Graph.mermaid`.
+- **Palette commands** — `archipilot.recordDecision`, `archipilot.generateContextDiagram`, `archipilot.showGraph` registered in Command Palette.
+- **TODO extractor core module** (`src/core/todo-extractor.ts`) — Pure module (zero vscode deps) with 13 category-specific extractors.
+
+## [0.6.0] - 2025-07-26
+
+### Added
+
+- **Idempotent `APPEND_TO_FILE`** — Checks for existing TOGAF IDs in target file before appending, preventing duplicate entries.
+- **Auto-stamped `last_modified`** — YAML front-matter `last_modified` field is automatically updated on every vault file write.
+- **Metadata validation** (`extractMetadataGaps`) — Scans all vault files for missing or TBD YAML front-matter fields (`status`, `owner`, `version`, `last_modified`, `type`), reviewers on deliverable types.
+- **Capability gap detection** (`extractCapabilityGaps`) — Flags business capabilities referenced without corresponding entries.
+- **Business scenario gaps** (`extractBusinessScenarioGaps`) — Identifies scenarios missing desired outcomes or action items.
+- **Architecture contract gaps** (`extractContractGaps`) — Detects contracts lacking quality criteria or review cadence.
+- **Traceability gaps** (`extractTraceabilityGaps`) — Finds requirements or decisions not traced in the traceability matrix.
+
 ## [0.5.0-beta] - 2025-07-24
 
 ### Added

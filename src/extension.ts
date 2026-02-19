@@ -15,6 +15,7 @@ let statusBarItem: vscode.StatusBarItem;
 export function activate(context: vscode.ExtensionContext): void {
   // ── Core services ──
   const vaultManager = new VaultManager(context);
+  context.subscriptions.push(vaultManager);
   const fileUpdater = new FileUpdater(vaultManager);
   const participant = new ArchitectParticipant(vaultManager, fileUpdater);
 
@@ -240,6 +241,35 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
 
+  // ── Vault Explorer search / filter ──
+  context.subscriptions.push(
+    vscode.commands.registerCommand('archipilot.filterVaultExplorer', async () => {
+      const current = vaultExplorer.filterText;
+      const input = await vscode.window.showInputBox({
+        prompt: 'Filter vault files by name or content (leave empty to clear)',
+        placeHolder: 'e.g. "risk", "API Gateway", "Phase B"',
+        value: current,
+      });
+      if (input !== undefined) {
+        vaultExplorer.setFilter(input);
+        if (input) {
+          vscode.window.showInformationMessage(`archipilot: Vault Explorer filtered to "${input}"`);
+        } else {
+          vscode.window.showInformationMessage('archipilot: Vault Explorer filter cleared');
+        }
+      }
+    }),
+  );
+
+  // ── Quick Actions customization ──
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration('archipilot.hiddenQuickActions')) {
+        quickActions.refresh();
+      }
+    }),
+  );
+
   // ── File-save watcher: auto-refresh sidebar when vault files change ──
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument((doc) => {
@@ -258,7 +288,7 @@ export function activate(context: vscode.ExtensionContext): void {
         updateStatusBar(vaultManager);
       });
     }
-  });
+  }).catch((err) => console.warn('archipilot: vault auto-detect failed:', err));
 
   console.log('archipilot activated');
 }

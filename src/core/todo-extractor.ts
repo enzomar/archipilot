@@ -31,7 +31,13 @@ export type TodoCategory =
   | 'compliance'
   | 'change-request'
   | 'document-maturity'
-  | 'ownership';
+  | 'ownership'
+  | 'metadata-gap'
+  | 'capability-gap'
+  | 'scenario-gap'
+  | 'contract-gap'
+  | 'traceability-gap'
+  | 'broken-link';
 
 export type TodoPriority = 'critical' | 'high' | 'medium' | 'low';
 
@@ -565,6 +571,312 @@ function extractOrphanedEntities(files: VaultFile[]): TodoItem[] {
   return items;
 }
 
+// ── 2.1 Metadata Validation ──────────────────────────────────────
+
+/** Required YAML fields for every vault document. */
+const REQUIRED_METADATA = ['type', 'togaf_phase', 'status', 'owner', 'version', 'created', 'last_modified'] as const;
+
+/** Deliverable types that should also have reviewers. */
+const REVIEWER_TYPES = new Set([
+  'architecture-vision', 'business-architecture', 'application-architecture',
+  'data-architecture', 'technology-architecture', 'integration-strategy',
+  'architecture-roadmap', 'architecture-requirements', 'compliance-assessment',
+]);
+
+/**
+ * Validate YAML front matter completeness for every vault file.
+ * Flags missing required fields and TBD/empty values in critical metadata.
+ */
+function extractMetadataGaps(files: VaultFile[]): TodoItem[] {
+  const items: TodoItem[] = [];
+
+  for (const file of files) {
+    const fmMatch = file.content.match(/^---\n([\s\S]*?)\n---/);
+    if (!fmMatch) {
+      items.push({
+        id: file.name.replace(/\.md$/, ''),
+        title: `Missing YAML front matter: ${file.name}`,
+        category: 'metadata-gap',
+        priority: 'critical',
+        phase: prefixToPhase(file.name),
+        sourceFile: file.name,
+        owner: 'TBD',
+        detail: 'No YAML front matter block found',
+      });
+      continue;
+    }
+
+    const yamlBlock = fmMatch[1];
+    const missing: string[] = [];
+    const tbd: string[] = [];
+
+    for (const field of REQUIRED_METADATA) {
+      const re = new RegExp(`^${field}:\\s*(.+)$`, 'm');
+      const m = yamlBlock.match(re);
+      if (!m) {
+        missing.push(field);
+      } else {
+        const val = m[1].trim();
+        if (val === 'TBD' || val === '' || val === '[]') {
+          tbd.push(field);
+        }
+      }
+    }
+
+    // Check reviewers for deliverable types
+    const typeVal = yamlValue(file.content, 'type') || '';
+    if (REVIEWER_TYPES.has(typeVal)) {
+      const reviewerMatch = yamlBlock.match(/^reviewers:\s*(.*)$/m);
+      if (!reviewerMatch || reviewerMatch[1].trim() === '[]' || reviewerMatch[1].trim() === '') {
+        tbd.push('reviewers');
+      }
+    }
+
+    if (missing.length > 0) {
+      items.push({
+        id: file.name.replace(/\.md$/, ''),
+        title: `Missing metadata in ${file.name}: ${missing.join(', ')}`,
+        category: 'metadata-gap',
+        priority: missing.includes('status') || missing.includes('owner') ? 'high' : 'medium',
+        phase: prefixToPhase(file.name),
+        sourceFile: file.name,
+        owner: yamlValue(file.content, 'owner') || 'TBD',
+        detail: `Missing fields: ${missing.join(', ')}`,
+      });
+    }
+
+    if (tbd.length > 0) {
+      items.push({
+        id: `${file.name.replace(/\.md$/, '')}-tbd`,
+        title: `Incomplete metadata in ${file.name}: ${tbd.join(', ')} = TBD`,
+        category: 'metadata-gap',
+        priority: tbd.includes('owner') ? 'high' : 'low',
+        phase: prefixToPhase(file.name),
+        sourceFile: file.name,
+        owner: yamlValue(file.content, 'owner') || 'TBD',
+        detail: `TBD/empty fields: ${tbd.join(', ')}`,
+      });
+    }
+  }
+
+  return items;
+}
+
+// ── 2.2 Additional TOGAF Artifact Extractors ─────────────────────
+
+/**
+ * Extract unfilled capabilities from the Business Capability Catalog (B2).
+ * Flags rows with missing maturity, target maturity, or owner.
+ */
+function extractCapabilityGaps(files: VaultFile[]): TodoItem[] {
+  const items: TodoItem[] = [];
+  const file = files.find((f) => f.name.includes('Business_Capability'));
+  if (!file) return items;
+
+  const tableSection = file.content.match(
+    /\|\s*ID\s*\|.*Capability.*\|[\s\S]*?(?=\n\n|\n## |$)/
+  );
+  if (!tableSection) return items;
+
+  const rows = parseTableRows(tableSection[0]);
+  for (const cells of rows) {
+    if (cells.length < 6) continue;
+    const [id, capability, _level, maturity, targetMaturity, owner] = cells;
+    if (!id.match(/BC-\d+/)) continue;
+
+    const gaps: string[] = [];
+    if (!capability || capability.trim() === '') gaps.push('name');
+    if (!maturity || maturity.trim() === '') gaps.push('current maturity');
+    if (!targetMaturity || targetMaturity.trim() === '') gaps.push('target maturity');
+    if (!owner || owner.trim() === '' || owner.trim() === 'TBD') gaps.push('owner');
+
+    if (gaps.length > 0) {
+      items.push({
+        id,
+        title: `Capability gap: ${capability || id} — missing ${gaps.join(', ')}`,
+        category: 'capability-gap',
+        priority: gaps.includes('name') ? 'high' : 'medium',
+        phase: 'B',
+        sourceFile: file.name,
+        owner: owner || 'TBD',
+        detail: `Incomplete fields: ${gaps.join(', ')}`,
+      });
+    }
+  }
+
+  return items;
+}
+
+/**
+ * Extract incomplete business scenarios from B3.
+ * Flags scenarios with missing trigger, actors, or architecture implications.
+ */
+function extractBusinessScenarioGaps(files: VaultFile[]): TodoItem[] {
+  const items: TodoItem[] = [];
+  const file = files.find((f) => f.name.includes('Business_Scenarios'));
+  if (!file) return items;
+
+  const scenarioBlocks = file.content.split(/(?=^## Scenario \d+)/m);
+  let scenarioIdx = 0;
+
+  for (const block of scenarioBlocks) {
+    const headerMatch = block.match(/^## Scenario (\d+)\s*[—–-]\s*(.+)/m);
+    if (!headerMatch) continue;
+    scenarioIdx++;
+
+    const scenarioId = `BS-${headerMatch[1].padStart(2, '0')}`;
+    const name = headerMatch[2].trim();
+    const gaps: string[] = [];
+
+    const triggerMatch = block.match(/\|\s*Trigger\s*\|\s*(.*?)\s*\|/);
+    if (!triggerMatch || triggerMatch[1].trim() === '') gaps.push('trigger');
+
+    const actorMatch = block.match(/\|\s*Actor\(s\)\s*\|\s*(.*?)\s*\|/);
+    if (!actorMatch || actorMatch[1].trim() === '') gaps.push('actors');
+
+    const implMatch = block.match(/### Architecture Implications\s*\n([\s\S]*?)(?=\n---|\n## |$)/);
+    if (!implMatch || implMatch[1].trim() === '-' || implMatch[1].trim() === '') {
+      gaps.push('architecture implications');
+    }
+
+    if (gaps.length > 0 || name === '(Name)') {
+      items.push({
+        id: scenarioId,
+        title: `Scenario incomplete: ${name === '(Name)' ? `Scenario ${scenarioIdx} (unnamed)` : name}`,
+        category: 'scenario-gap',
+        priority: name === '(Name)' ? 'high' : 'medium',
+        phase: 'B',
+        sourceFile: file.name,
+        owner: yamlValue(file.content, 'owner') || 'TBD',
+        detail: gaps.length > 0 ? `Missing: ${gaps.join(', ')}` : 'Scenario needs naming',
+      });
+    }
+  }
+
+  return items;
+}
+
+/**
+ * Extract incomplete Architecture Contracts from G2.
+ * Flags contracts with Draft status or missing parties/scope.
+ */
+function extractContractGaps(files: VaultFile[]): TodoItem[] {
+  const items: TodoItem[] = [];
+  const file = files.find((f) => f.name.includes('Architecture_Contracts'));
+  if (!file) return items;
+
+  const tableSection = file.content.match(
+    /## Active Contracts\s*\n([\s\S]*?)(?=\n## |\n---|$)/
+  );
+  if (!tableSection) return items;
+
+  const rows = parseTableRows(tableSection[1]);
+  for (const cells of rows) {
+    if (cells.length < 7) continue;
+    const [id, title, parties, scope, _effectiveDate, _reviewDate, status] = cells;
+    if (!id.match(/AC-\d+/)) continue;
+
+    const gaps: string[] = [];
+    if (!parties || parties.trim() === '' || parties.includes('TBD')) gaps.push('parties');
+    if (!scope || scope.trim() === '' || scope.includes('TBD')) gaps.push('scope');
+    if (status.toLowerCase().includes('draft')) gaps.push('still in draft');
+
+    if (gaps.length > 0) {
+      items.push({
+        id,
+        title: `Contract gap: ${title || id} — ${gaps.join(', ')}`,
+        category: 'contract-gap',
+        priority: 'high',
+        phase: 'G',
+        sourceFile: file.name,
+        owner: yamlValue(file.content, 'owner') || 'TBD',
+        detail: `Issues: ${gaps.join(', ')}`,
+      });
+    }
+  }
+
+  return items;
+}
+
+/**
+ * Extract incomplete traceability rows from the Traceability Matrix (X5).
+ * Flags rows with empty component, decision, or building block columns.
+ */
+function extractTraceabilityGaps(files: VaultFile[]): TodoItem[] {
+  const items: TodoItem[] = [];
+  const file = files.find((f) => f.name.includes('Traceability_Matrix'));
+  if (!file) return items;
+
+  // Business Driver → Requirement → Architecture → Decision table
+  const driverSection = file.content.match(
+    /## Business Driver.*?\n([\s\S]*?)(?=\n## |\n---|$)/
+  );
+  if (driverSection) {
+    const rows = parseTableRows(driverSection[1]);
+    for (const cells of rows) {
+      if (cells.length < 6) continue;
+      const [driver, reqId, archComponent, decision, buildingBlock] = cells;
+
+      const gaps: string[] = [];
+      if (!driver || driver.trim() === '') gaps.push('driver');
+      if (!archComponent || archComponent.trim() === '') gaps.push('architecture component');
+      if (!decision || decision.trim() === '') gaps.push('decision');
+      if (!buildingBlock || buildingBlock.trim() === '') gaps.push('building block');
+
+      if (gaps.length >= 2 && reqId && reqId.match(/[A-Z]+-\d+/)) {
+        items.push({
+          id: `TRACE-${reqId.trim()}`,
+          title: `Traceability gap for ${reqId.trim()}: missing ${gaps.join(', ')}`,
+          category: 'traceability-gap',
+          priority: gaps.length >= 3 ? 'high' : 'medium',
+          phase: 'Cross-phase',
+          sourceFile: file.name,
+          owner: yamlValue(file.content, 'owner') || 'TBD',
+          detail: `${gaps.length} of 4 trace columns empty`,
+        });
+      }
+    }
+  }
+
+  return items;
+}
+
+/**
+ * Detect broken WikiLinks — `[[Target]]` references that don't resolve to any vault file.
+ * Broken links indicate missing documentation or renamed files that weren't updated.
+ */
+function extractBrokenLinks(files: VaultFile[]): TodoItem[] {
+  const items: TodoItem[] = [];
+  const fileNames = new Set(files.map((f) => f.name.replace(/\.md$/, '')));
+  const wikiLinkRe = /\[\[([^\]|#]+)[^\]]*\]\]/g;
+
+  for (const file of files) {
+    let match: RegExpExecArray | null;
+    const seenTargets = new Set<string>();
+
+    while ((match = wikiLinkRe.exec(file.content)) !== null) {
+      const target = match[1].trim();
+      if (seenTargets.has(target)) continue;
+      seenTargets.add(target);
+
+      if (!fileNames.has(target)) {
+        items.push({
+          id: `LINK-${target}`,
+          title: `Broken link to [[${target}]] in ${file.name}`,
+          category: 'broken-link',
+          priority: 'medium',
+          phase: prefixToPhase(file.name),
+          sourceFile: file.name,
+          owner: yamlValue(file.content, 'owner') || 'TBD',
+          detail: `[[${target}]] not found in vault`,
+        });
+      }
+    }
+  }
+
+  return items;
+}
+
 // ── Main public API ────────────────────────────────────────────────
 
 /**
@@ -583,6 +895,12 @@ export function extractTodos(files: VaultFile[]): TodoSummary {
     ...extractDocumentMaturity(files),
     ...extractUnassignedOwnership(files),
     ...extractOrphanedEntities(files),
+    ...extractMetadataGaps(files),
+    ...extractCapabilityGaps(files),
+    ...extractBusinessScenarioGaps(files),
+    ...extractContractGaps(files),
+    ...extractTraceabilityGaps(files),
+    ...extractBrokenLinks(files),
   ];
 
   // Sort by priority (critical > high > medium > low)
@@ -665,6 +983,12 @@ export function formatTodoMarkdown(summary: TodoSummary): string {
     'change-request': '🔄 Change Requests',
     'document-maturity': '📝 Document Maturity',
     ownership: '👤 Unassigned Ownership',
+    'metadata-gap': '🏷️ Metadata Gaps',
+    'capability-gap': '🧩 Capability Gaps',
+    'scenario-gap': '🎭 Business Scenario Gaps',
+    'contract-gap': '📜 Architecture Contract Gaps',
+    'traceability-gap': '🔗 Traceability Gaps',
+    'broken-link': '🔗 Broken WikiLinks',
   };
 
   const categoryOrder: TodoCategory[] = [
@@ -672,6 +996,11 @@ export function formatTodoMarkdown(summary: TodoSummary): string {
     'decision-pending',
     'risk',
     'risk-no-owner',
+    'metadata-gap',
+    'capability-gap',
+    'scenario-gap',
+    'contract-gap',
+    'traceability-gap',
     'orphaned-entity',
     'work-package',
     'milestone',
@@ -681,6 +1010,7 @@ export function formatTodoMarkdown(summary: TodoSummary): string {
     'change-request',
     'document-maturity',
     'ownership',
+    'broken-link',
   ];
 
   for (const cat of categoryOrder) {
