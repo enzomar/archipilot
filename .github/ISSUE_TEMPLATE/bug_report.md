@@ -4,6 +4,7 @@ about: Report a bug in archipilot
 title: "[Bug] "
 labels: bug
 assignees: ''
+
 ---
 
 ## Describe the Bug
