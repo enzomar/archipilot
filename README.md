@@ -1,10 +1,26 @@
 # archipilot – Enterprise Architecture Copilot
 
+> **archipilot – Enterprise Architecture Copilot**
+> Copyright © 2026 [enzomar](https://github.com/enzomar)
+>
+> This project is licensed under the [MIT License](LICENSE).
+>
+> If you use this software in a commercial product or service,
+> attribution is appreciated (though not legally required beyond
+> the license terms). A link to https://github.com/enzomar/archipilot
+> or a mention in your documentation is welcome.
+>
+> If you find this project useful in your organisation, consider:
+> - ⭐ Starring the repository
+> - 🐛 Reporting bugs or suggesting features
+> - 📣 Sharing it with other architects
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/enzomar/archipilot/actions/workflows/ci.yml/badge.svg)](https://github.com/enzomar/archipilot/actions/workflows/ci.yml)
 [![VS Code](https://img.shields.io/badge/VS%20Code-1.93%2B-blue.svg)](https://code.visualstudio.com/)
 [![GitHub Issues](https://img.shields.io/github/issues/enzomar/archipilot)](https://github.com/enzomar/archipilot/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/enzomar/archipilot)](https://github.com/enzomar/archipilot/stargazers)
+[![Website](https://img.shields.io/badge/Website-archipilot-blue)](https://enzomar.github.io/archipilot/)
 
 A VS Code Chat Participant extension that turns your Obsidian architecture vaults into an interactive, TOGAF-aligned Enterprise Architecture assistant — powered by GitHub Copilot.
 
