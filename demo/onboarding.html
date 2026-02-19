@@ -31,38 +31,39 @@
     .reveal h1, .reveal h2, .reveal h3 {
       color: var(--ap-yellow); text-transform: none; letter-spacing: -0.02em;
     }
-    .reveal h1 { font-size: 1.9em; }
-    .reveal h2 { font-size: 1.25em; border-bottom: 2px solid var(--ap-yellow);
-                 padding-bottom: 0.12em; margin-bottom: 0.4em; }
-    .reveal h3 { font-size: 0.95em; color: var(--ap-blue); margin: 0.3em 0 0.2em; }
+    .reveal h1 { font-size: 1.6em; }
+    .reveal h2 { font-size: 1.05em; border-bottom: 2px solid var(--ap-yellow);
+                 padding-bottom: 0.08em; margin-bottom: 0.25em; }
+    .reveal h3 { font-size: 0.78em; color: var(--ap-blue); margin: 0.15em 0 0.1em; }
     .reveal .slides section {
-      text-align: left; overflow-y: auto;
-      max-height: 680px; box-sizing: border-box;
+      text-align: left; overflow: hidden;
+      height: 100%; box-sizing: border-box;
+      padding: 0.3em 0.5em;
     }
-    .reveal ul { margin-left: 0.9em; }
-    .reveal li  { margin: 0.22em 0; font-size: 0.8em; }
-    .reveal p   { font-size: 0.8em; margin: 0.25em 0; }
-    .reveal ol  { margin-left: 1.1em; }
-    .reveal ol li { font-size: 0.8em; margin: 0.25em 0; }
-    code { background: #1e293b; padding: 0.05em 0.35em; border-radius: 4px;
-           font-size: 0.88em; color: #7dd3fc; }
+    .reveal ul { margin-left: 0.7em; }
+    .reveal li  { margin: 0.12em 0; font-size: 0.65em; line-height: 1.35; }
+    .reveal p   { font-size: 0.65em; margin: 0.15em 0; }
+    .reveal ol  { margin-left: 0.9em; }
+    .reveal ol li { font-size: 0.65em; margin: 0.12em 0; }
+    code { background: #1e293b; padding: 0.02em 0.28em; border-radius: 3px;
+           font-size: 0.85em; color: #7dd3fc; }
 
     /* ─── COMMAND BLOCK ──────────────────────────────── */
-    .cmd-wrap { position: relative; margin: 0.3em 0; }
+    .cmd-wrap { position: relative; margin: 0.18em 0; }
     .cmd {
       background: #0d1117;
       border: 1px solid #30363d;
-      border-left: 4px solid var(--ap-yellow);
-      border-radius: 6px;
-      padding: 0.4em 2.2em 0.4em 0.75em;
+      border-left: 3px solid var(--ap-yellow);
+      border-radius: 5px;
+      padding: 0.25em 2em 0.25em 0.6em;
       font-family: 'JetBrains Mono', 'Fira Code', monospace;
-      font-size: 0.78em; color: #e6edf3;
-      white-space: pre-wrap; line-height: 1.55;
+      font-size: 0.62em; color: #e6edf3;
+      white-space: pre-wrap; line-height: 1.4;
     }
     .copy-btn {
-      position: absolute; top: 0.3em; right: 0.4em;
-      background: #334155; border: none; border-radius: 4px;
-      color: #94a3b8; font-size: 0.65em; padding: 0.2em 0.45em;
+      position: absolute; top: 0.2em; right: 0.3em;
+      background: #334155; border: none; border-radius: 3px;
+      color: #94a3b8; font-size: 0.55em; padding: 0.15em 0.35em;
       cursor: pointer; transition: background 0.15s, color 0.15s;
     }
     .copy-btn:hover { background: var(--ap-yellow); color: #000; }
@@ -72,61 +73,62 @@
     .tryit {
       background: #0a1628;
       border: 1.5px dashed var(--ap-yellow);
-      border-radius: 8px;
-      padding: 0.45em 0.8em;
-      font-size: 0.77em;
+      border-radius: 6px;
+      padding: 0.25em 0.6em;
+      font-size: 0.62em;
       color: #f5c518;
-      margin: 0.35em 0;
+      margin: 0.2em 0;
     }
     .tryit strong { color: #fff; }
 
     /* ─── NARRATION ──────────────────────────────────── */
     .narration {
       background: var(--ap-card);
-      border-left: 4px solid var(--ap-green);
-      border-radius: 6px;
-      padding: 0.4em 0.75em;
-      font-style: italic; color: #cbd5e1; font-size: 0.76em;
-      margin: 0.3em 0;
+      border-left: 3px solid var(--ap-green);
+      border-radius: 5px;
+      padding: 0.2em 0.55em;
+      font-style: italic; color: #cbd5e1; font-size: 0.6em;
+      margin: 0.15em 0;
     }
 
     /* ─── EXPECT ─────────────────────────────────────── */
     .expect {
       background: var(--ap-card);
-      border-left: 4px solid var(--ap-blue);
-      border-radius: 6px;
-      padding: 0.35em 0.75em;
-      font-size: 0.74em; color: #94a3b8;
-      margin: 0.3em 0;
+      border-left: 3px solid var(--ap-blue);
+      border-radius: 5px;
+      padding: 0.2em 0.55em;
+      font-size: 0.6em; color: #94a3b8;
+      margin: 0.15em 0;
     }
 
     /* ─── SNIPPET ─────────────────────────────────────── */
     .snippet {
       background: #0d1117;
       border: 1px solid #1e3a5f;
-      border-radius: 6px;
-      padding: 0.35em 0.75em;
+      border-radius: 5px;
+      padding: 0.2em 0.55em;
       font-family: 'JetBrains Mono', 'Fira Code', monospace;
-      font-size: 0.68em; color: #7dd3fc;
-      white-space: pre-wrap; margin: 0.25em 0;
+      font-size: 0.55em; color: #7dd3fc;
+      white-space: pre-wrap; margin: 0.15em 0;
+      line-height: 1.35;
     }
 
     /* ─── LAYOUT ─────────────────────────────────────── */
-    .cols  { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8em; align-items: start; }
-    .cols3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6em; align-items: start; }
+    .cols  { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5em; align-items: start; }
+    .cols3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4em; align-items: start; }
 
     /* ─── CARD ───────────────────────────────────────── */
     .card {
       background: var(--ap-card); border: 1px solid #334155;
-      border-radius: 8px; padding: 0.55em 0.75em;
+      border-radius: 6px; padding: 0.3em 0.55em;
     }
-    .card h4 { color: var(--ap-yellow); margin: 0 0 0.25em; font-size: 0.8em; }
-    .card p, .card li { font-size: 0.74em; color: #94a3b8; margin: 0.15em 0; }
+    .card h4 { color: var(--ap-yellow); margin: 0 0 0.15em; font-size: 0.65em; }
+    .card p, .card li { font-size: 0.6em; color: #94a3b8; margin: 0.08em 0; }
 
     /* ─── PILLS ──────────────────────────────────────── */
     .pill {
-      display: inline-block; padding: 0.12em 0.55em; border-radius: 99px;
-      font-size: 0.7em; font-weight: 600; margin: 0 0.1em;
+      display: inline-block; padding: 0.08em 0.4em; border-radius: 99px;
+      font-size: 0.6em; font-weight: 600; margin: 0 0.08em;
     }
     .pill-red    { background: #450a0a; color: var(--ap-red); }
     .pill-yellow { background: #422006; color: #fbbf24; }
@@ -135,9 +137,9 @@
 
     /* ─── ROLE BADGE (shown on every track slide) ─────── */
     .role-badge {
-      position: absolute; top: 0.9em; right: 1em;
-      font-size: 0.62em; font-weight: 700; padding: 0.2em 0.6em;
-      border-radius: 4px; text-transform: uppercase; letter-spacing: 0.07em;
+      position: absolute; top: 0.4em; right: 0.6em;
+      font-size: 0.5em; font-weight: 700; padding: 0.15em 0.45em;
+      border-radius: 3px; text-transform: uppercase; letter-spacing: 0.07em;
     }
     .badge-dev  { background: #022c22; color: var(--dev-color);  border: 1px solid var(--dev-color); }
     .badge-arch { background: #1e1b4b; color: var(--arch-color); border: 1px solid var(--arch-color); }
@@ -145,11 +147,11 @@
 
     /* ─── STEP COUNTER ───────────────────────────────── */
     .step-counter {
-      display: inline-flex; align-items: center; gap: 0.35em;
-      margin-bottom: 0.3em;
+      display: inline-flex; align-items: center; gap: 0.25em;
+      margin-bottom: 0.15em;
     }
     .step-dot {
-      width: 10px; height: 10px; border-radius: 50%;
+      width: 8px; height: 8px; border-radius: 50%;
       background: #334155; border: 1.5px solid #475569;
     }
     .step-dot.active { background: var(--ap-yellow); border-color: var(--ap-yellow); }
@@ -157,77 +159,77 @@
 
     /* ─── TITLE SLIDE ────────────────────────────────── */
     .title-slide { text-align: center; }
-    .title-slide h1 { font-size: 2.2em; margin-bottom: 0.1em; }
-    .title-slide .sub { color: var(--ap-gray); font-size: 0.88em; }
+    .title-slide h1 { font-size: 1.9em; margin-bottom: 0.08em; }
+    .title-slide .sub { color: var(--ap-gray); font-size: 0.75em; }
 
     /* ─── ROLE CARDS (picker slide) ─────────────────── */
-    .role-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1em; margin-top: 0.8em; }
+    .role-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.7em; margin-top: 0.5em; }
     .role-card {
       background: var(--ap-card); border: 2px solid #334155;
-      border-radius: 12px; padding: 1em 0.9em;
+      border-radius: 10px; padding: 0.6em 0.7em;
       cursor: pointer; text-align: center;
       transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
     }
-    .role-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px #00000060; }
+    .role-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px #00000060; }
     .role-card.dev  { border-color: var(--dev-color); }
     .role-card.arch { border-color: var(--arch-color); }
     .role-card.cur  { border-color: var(--cur-color); }
-    .role-card .icon { font-size: 2.2em; display: block; margin-bottom: 0.3em; }
-    .role-card h3   { margin: 0 0 0.3em; font-size: 0.95em; }
+    .role-card .icon { font-size: 1.8em; display: block; margin-bottom: 0.2em; }
+    .role-card h3   { margin: 0 0 0.2em; font-size: 0.78em; }
     .role-card.dev  h3 { color: var(--dev-color);  }
     .role-card.arch h3 { color: var(--arch-color); }
     .role-card.cur  h3 { color: var(--cur-color);  }
-    .role-card p    { font-size: 0.72em; color: #64748b; margin: 0; }
+    .role-card p    { font-size: 0.58em; color: #64748b; margin: 0; }
 
     .role-card .duration {
-      display: inline-block; margin-top: 0.55em;
-      font-size: 0.65em; color: var(--ap-gray);
-      background: #0f172a; border-radius: 4px; padding: 0.15em 0.5em;
+      display: inline-block; margin-top: 0.35em;
+      font-size: 0.52em; color: var(--ap-gray);
+      background: #0f172a; border-radius: 3px; padding: 0.1em 0.4em;
     }
 
     /* ─── LEARN BOX ──────────────────────────────────── */
     .learn-box {
       background: #052e16; border: 1px solid var(--ap-green);
-      border-radius: 8px; padding: 0.5em 0.8em; margin: 0.4em 0;
+      border-radius: 6px; padding: 0.3em 0.6em; margin: 0.2em 0;
     }
-    .learn-box h4 { color: var(--ap-green); font-size: 0.8em; margin: 0 0 0.3em; }
-    .learn-box li { font-size: 0.74em; color: #86efac; margin: 0.18em 0; }
+    .learn-box h4 { color: var(--ap-green); font-size: 0.65em; margin: 0 0 0.15em; }
+    .learn-box li { font-size: 0.6em; color: #86efac; margin: 0.08em 0; }
 
     /* ─── SCENARIO BOX ───────────────────────────────── */
     .scenario {
-      background: #1e293b; border-left: 4px solid var(--ap-orange);
-      border-radius: 6px; padding: 0.5em 0.8em; margin: 0.4em 0;
-      font-size: 0.8em; color: #e2e8f0;
+      background: #1e293b; border-left: 3px solid var(--ap-orange);
+      border-radius: 5px; padding: 0.25em 0.55em; margin: 0.2em 0;
+      font-size: 0.62em; color: #e2e8f0;
     }
     .scenario strong { color: var(--ap-orange); }
 
     /* ─── DIFF PREVIEW ───────────────────────────────── */
-    .diff-add { color: var(--ap-green); font-size: 0.75em; font-family: monospace; }
-    .diff-rem { color: var(--ap-red);   font-size: 0.75em; font-family: monospace; }
+    .diff-add { color: var(--ap-green); font-size: 0.58em; font-family: monospace; }
+    .diff-rem { color: var(--ap-red);   font-size: 0.58em; font-family: monospace; }
 
     /* ─── APPLY BTN MOCK ─────────────────────────────── */
     .apply-btn {
       display: inline-block; background: #052e16;
       color: var(--ap-green); border: 1px solid var(--ap-green);
-      border-radius: 4px; padding: 0.2em 0.65em; font-size: 0.72em;
-      font-weight: 600; margin: 0.3em 0;
+      border-radius: 3px; padding: 0.15em 0.5em; font-size: 0.58em;
+      font-weight: 600; margin: 0.15em 0;
     }
 
     /* ─── CONGRATS BOX ───────────────────────────────── */
     .congrats {
       background: #1e293b; border: 2px solid var(--ap-yellow);
-      border-radius: 10px; padding: 0.6em 1em; text-align: center; margin: 0.5em 0;
+      border-radius: 8px; padding: 0.35em 0.7em; text-align: center; margin: 0.25em 0;
     }
-    .congrats .big { font-size: 1.6em; }
-    .congrats p { color: #e2e8f0; font-size: 0.82em; }
+    .congrats .big { font-size: 1.3em; }
+    .congrats p { color: #e2e8f0; font-size: 0.62em; }
 
     /* ─── CTA LINKS ──────────────────────────────────── */
     .cta-link {
       display: inline-block;
       background: var(--ap-yellow); color: #000;
-      border-radius: 6px; padding: 0.4em 0.9em;
-      font-weight: 700; font-size: 0.8em; text-decoration: none;
-      margin: 0.3em 0.2em;
+      border-radius: 5px; padding: 0.25em 0.65em;
+      font-weight: 700; font-size: 0.65em; text-decoration: none;
+      margin: 0.15em 0.15em;
     }
     .cta-link.ghost {
       background: transparent; color: var(--ap-yellow);
@@ -235,13 +237,13 @@
     }
 
     /* ─── TABLE ──────────────────────────────────────── */
-    .reveal table { width: 100%; font-size: 0.75em; border-collapse: collapse; }
-    .reveal table th { background: #1e293b; color: var(--ap-yellow); padding: 0.35em 0.55em; }
-    .reveal table td { padding: 0.3em 0.55em; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+    .reveal table { width: 100%; font-size: 0.6em; border-collapse: collapse; }
+    .reveal table th { background: #1e293b; color: var(--ap-yellow); padding: 0.2em 0.4em; }
+    .reveal table td { padding: 0.18em 0.4em; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
 
     /* ─── NAV HINT ───────────────────────────────────── */
     .nav-hint {
-      text-align: center; color: #475569; font-size: 0.65em; margin-top: 0.5em;
+      text-align: center; color: #475569; font-size: 0.52em; margin-top: 0.2em;
     }
   </style>
 </head>
@@ -254,22 +256,22 @@
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
 <section data-background-color="#0f172a">
   <div class="title-slide">
-    <div style="font-size:2.4em; margin-bottom:0.15em;">🧭</div>
+    <div style="font-size:1.8em; margin-bottom:0.1em;">🧭</div>
     <h1>archipilot</h1>
     <p class="sub">Enterprise Architecture Copilot · inside VS Code</p>
-    <hr style="border-color:#334155; margin: 0.8em auto; width: 40%;" />
-    <p style="color: var(--ap-blue); font-size: 0.9em; font-weight: 600;">
+    <hr style="border-color:#334155; margin: 0.5em auto; width: 40%;" />
+    <p style="color: var(--ap-blue); font-size: 0.75em; font-weight: 600;">
       Interactive Onboarding — Hands-On
     </p>
-    <p style="color:#64748b; font-size: 0.72em; margin-top: 0.3em;">
+    <p style="color:#64748b; font-size: 0.6em; margin-top: 0.2em;">
       Pick your role on the next slide · follow the steps · try every command live in VS Code
     </p>
-    <p style="margin-top: 1em;">
-      <span style="font-size:0.72em; color:#334155; background:#0d1117; padding:0.2em 0.7em; border-radius:4px; font-family:monospace;">
+    <p style="margin-top: 0.5em;">
+      <span style="font-size:0.6em; color:#334155; background:#0d1117; padding:0.15em 0.5em; border-radius:3px; font-family:monospace;">
         ext install enzomar.archipilot
       </span>
     </p>
-    <p class="nav-hint" style="margin-top:0.8em">→ press Space or → to continue</p>
+    <p class="nav-hint" style="margin-top:0.4em">→ press Space or → to continue</p>
   </div>
   <aside class="notes">Welcome slide. This is a self-guided onboarding — the user will pick a role next and follow live hands-on steps.</aside>
 </section>
@@ -304,7 +306,7 @@
     </div>
 
   </div>
-  <p class="nav-hint" style="margin-top:0.8em">You can also use ↓ to step through a track manually after clicking a role</p>
+  <p class="nav-hint" style="margin-top:0.4em">You can also use ↓ to step through a track manually after clicking a role</p>
   <aside class="notes">Role picker. Clicking a card calls goTo(h,v) via JS to jump to the matching horizontal section.</aside>
 </section>
 
@@ -322,7 +324,7 @@
       Your manager asks: <em>"Can you share the architecture docs for the sprint review?"</em>
       <br/>You have 30 minutes and no Confluence page yet.
     </div>
-    <div class="cols" style="margin-top:0.6em">
+    <div class="cols" style="margin-top:0.3em">
       <div class="card">
         <h4>🎯 Goal</h4>
         <p>Go from zero documentation to a structured, version-controlled architecture with diagrams and decisions — all from inside VS Code.</p>
@@ -362,12 +364,12 @@
       <strong style="color:var(--ap-blue)">What happens:</strong>
       <ul>
         <li>27 TOGAF-aligned Markdown files appear in Explorer</li>
-        <li><code>00_Architecture_Repository.md</code> opens — your master index</li>
-        <li>archipilot suggests opening <code>A1_Architecture_Vision.md</code> first</li>
+        <li>Chat shows a file listing grouped by ADM phase (Preliminary → A → B → … → H)</li>
+        <li>Suggested next commands: <code>/status</code>, <code>/analyze</code>, <code>/update</code></li>
       </ul>
     </div>
     <div class="narration">
-      💡 These are just Markdown files in your repo. Git-tracked, no special format, no lock-in.
+      💡 These are just Markdown files in your repo. Git-tracked, no special format, no lock-in. Every file has YAML front matter with status, ownership, and TOGAF phase info.
     </div>
     <p class="nav-hint">↓ Step 2</p>
     <aside class="notes">First live command. Encourage the user to actually run it before pressing next.</aside>
@@ -422,7 +424,7 @@
       <strong style="color:var(--ap-blue)">Expected:</strong>
       Mermaid <code>flowchart LR</code> inserted under a new <code>## Context Diagram</code> section — auto-generated from the services you listed above.
     </div>
-    <div class="tryit" style="margin-top:0.5em; border-color: var(--ap-purple)">
+    <div class="tryit" style="margin-top:0.2em; border-color: var(--ap-purple)">
       <strong>Want a C4 model instead?</strong> Run:
     </div>
     <div class="cmd-wrap">
@@ -455,12 +457,12 @@ Redis gives sub-ms latency at horizontal scale</div>
     <div class="expect">
       <strong style="color:var(--ap-blue)">Expected:</strong>
       <ul>
-        <li>Diff preview opens — new entry appended to <code>X1_ADR_Decision_Log.md</code></li>
-        <li>AD-01 · Status: <span class="pill pill-yellow">🟡 Proposed</span> · Date: today</li>
-        <li>Context, decision, consequences sections pre-filled</li>
+        <li>Entry appended to <code>X1_ADR_Decision_Log.md</code> — chat confirms with ✅</li>
+        <li>AD-01 · Status: <span class="pill pill-yellow">🟡 Proposed</span> · Date: today · Owner: TBD</li>
+        <li>Template sections: Context, Options, Decision — ready to fill</li>
+        <li>Suggestion: use <code>/decide</code> next to get AI analysis on this decision</li>
       </ul>
     </div>
-    <div class="apply-btn">👆 Click Apply All in the diff preview</div>
     <div class="narration">
       💡 Every decision is traceable. Future architects (or you in 6 months) will know exactly why each choice was made.
     </div>
@@ -484,10 +486,9 @@ Redis gives sub-ms latency at horizontal scale</div>
     <div class="expect">
       <strong style="color:var(--ap-blue)">Expected output:</strong>
       <ul>
-        <li>C1: <span class="pill pill-yellow">Draft</span> — diagram added ✅</li>
-        <li>D1: <span class="pill pill-red">Empty</span> — technology stack not documented</li>
-        <li>A1: <span class="pill pill-red">Empty</span> — no architecture vision written</li>
-        <li>1 ADR recorded ✅ · 0 risks documented ⚠️</li>
+        <li>📊 Document Maturity table — how many files are draft / in-review / approved</li>
+        <li>Key Metrics with RAG status: open decisions, risks, questions, broken links, TBD ownership</li>
+        <li>Open Items by ADM Phase — which phases need the most attention</li>
       </ul>
     </div>
     <div class="tryit">
@@ -523,13 +524,13 @@ Redis gives sub-ms latency at horizontal scale</div>
         <li><code>/status</code> and <code>/todo</code> — know what's missing, what's next</li>
       </ul>
     </div>
-    <p style="margin-top:0.6em">
+    <p style="margin-top:0.3em">
       <strong style="color: var(--ap-yellow)">Next to explore:</strong>
       <code>/archimate</code> to export to Archi, BiZZdesign or Sparx EA ·
       <code>/drawio</code> for stakeholder diagrams ·
       <code>/analyze</code> for impact analysis
     </p>
-    <div style="margin-top:0.7em; text-align:center">
+    <div style="margin-top:0.3em; text-align:center">
       <a class="cta-link" href="https://enzomar.github.io/archipilot/" target="_blank">🌐 Documentation</a>
       <a class="cta-link ghost" href="https://github.com/enzomar/archipilot" target="_blank">⭐ Star on GitHub</a>
     </div>
@@ -550,7 +551,7 @@ Redis gives sub-ms latency at horizontal scale</div>
     <div class="scenario">
       <strong>HealthConnect</strong> — you've just joined a mid-flight project. Architecture decisions are buried in email threads. Risks are in someone's head. Three work packages are blocked. Your first stand-up is in 2 hours.
     </div>
-    <div class="cols" style="margin-top:0.6em">
+    <div class="cols" style="margin-top:0.3em">
       <div class="card">
         <h4>🎯 Goal</h4>
         <p>Get full situational awareness, surface the critical blockers, resolve an open decision, and record the outcome — with governance — before the stand-up.</p>
@@ -591,11 +592,10 @@ Redis gives sub-ms latency at horizontal scale</div>
     <div class="expect">
       <strong style="color:var(--ap-blue)">Expected — instant situational awareness:</strong>
       <ul>
-        <li>Document completeness by TOGAF phase (Vision ✅  Business ⚠️  Tech ❌)</li>
-        <li>3 open ADRs — 2 blocking work packages</li>
-        <li>5 risks — 2 <span class="pill pill-red">High</span> unmitigated</li>
-        <li>4 open questions without owners</li>
-        <li>Sprint velocity estimate vs architecture gate readiness</li>
+        <li>📊 Document Maturity table — draft / in-review / approved counts</li>
+        <li>Key Metrics with RAG (🔴🟡✅): open decisions, proposed decisions, open risks, risks without owners</li>
+        <li>Open questions, broken WikiLinks, TBD ownership — all counted</li>
+        <li>Open Items by ADM Phase — see which phases are blocking</li>
       </ul>
     </div>
     <div class="narration">
@@ -621,11 +621,10 @@ Redis gives sub-ms latency at horizontal scale</div>
     <div class="expect">
       <strong style="color:var(--ap-blue)">Expected — cross-vault priority list:</strong>
       <ul>
-        <li><span class="pill pill-red">BLOCKER</span> AD-01 API Gateway — open, blocking 3 delivery tasks</li>
-        <li><span class="pill pill-red">HIGH</span> Risk R-03 PCI-DSS gap — mitigation not started</li>
-        <li><span class="pill pill-yellow">MED</span> AD-02 Message Bus — open, overdue</li>
-        <li><span class="pill pill-yellow">MED</span> Q-04 Multi-cloud strategy — no owner</li>
-        <li><span class="pill pill-green">LOW</span> D1 Technology Architecture — draft, needs review</li>
+        <li>Overview table — total items, by priority (🔴 critical · 🟠 high · 🟡 medium · ⚪ low), unassigned count</li>
+        <li>Per-category tables: 🔷 Open Decisions · ⚠️ Open Risks · ❓ Open Questions · 📦 Work Packages · 🔗 Broken Links …</li>
+        <li>Each row: Priority | ID | Action | Owner | Phase | Detail</li>
+        <li>Distribution by ADM Phase + AI prioritisation &amp; analysis</li>
       </ul>
     </div>
     <div class="narration">
@@ -654,9 +653,9 @@ and the team's limited infra ops capacity</div>
     <div class="expect">
       <strong style="color:var(--ap-blue)">Expected — vault-grounded analysis:</strong>
       <ul>
-        <li>Context pulled from vault: PCI-DSS risk, team skills, multi-cloud question</li>
-        <li>Pros / cons matrix across all 3 options</li>
-        <li>Weighted recommendation with rationale</li>
+        <li>AI reads your full vault context — PCI-DSS risk, team skills, multi-cloud question</li>
+        <li>Structured analysis streamed as markdown in chat (pros / cons, recommendation)</li>
+        <li>May include structured vault update proposals — review in diff preview before applying</li>
         <li>Suggested follow-up: <code>/adr</code> to record the decision</li>
       </ul>
     </div>
@@ -684,15 +683,14 @@ ops overhead. Revisit at Phase 3 if multi-cloud needed.</div>
     </div>
     <div class="cols" style="margin-top:0.3em">
       <div class="expect">
-        <strong style="color:var(--ap-blue)">Diff preview shows:</strong>
-        <div class="diff-add">+ AD-01 · AWS API Gateway · ✅ Decided</div>
-        <div class="diff-add">+ Date: today · Owner: [you]</div>
-        <div class="diff-add">+ Context, rationale, consequences sections</div>
+        <strong style="color:var(--ap-blue)">Chat confirms:</strong>
+        <div class="diff-add">+ ✅ Recorded: AD-04 — Adopt AWS API Gateway</div>
+        <div class="diff-add">+ Status: 🟡 Proposed · Date: today · Owner: TBD</div>
+        <div class="diff-add">+ Template: Context, Options, Decision sections</div>
       </div>
       <div>
-        <div class="apply-btn">👆 Click Apply All</div>
         <div class="narration" style="margin-top:0.4em">
-          💡 Automatic timestamped backup created before every write. Nothing is lost.
+          💡 Entry is appended directly to <code>X1_ADR_Decision_Log.md</code>. Automatic timestamped backup created before every write. Nothing is lost.
         </div>
       </div>
     </div>
@@ -716,17 +714,16 @@ zero-trust network architecture?</div>
       <button class="copy-btn" onclick="copyCmd('arch-cmd-5',this)">copy</button>
     </div>
     <div class="expect">
-      <strong style="color:var(--ap-blue)">Expected — full traceability sweep:</strong>
+      <strong style="color:var(--ap-blue)">Expected — vault-grounded AI analysis:</strong>
       <ul>
-        <li>Affected components: Auth Service, API Gateway, Remote Worker Portal</li>
-        <li>Requirements touched: NFR-03 (security), NFR-07 (availability)</li>
-        <li>Risks triggered: R-02 (identity continuity), R-03 (PCI-DSS scope shift)</li>
-        <li>ADRs that need review: AD-01 (newly decided)</li>
-        <li>Recommended actions: update D1, raise new risk, notify compliance</li>
+        <li>AI reads your full vault and reasons about the impact of the change</li>
+        <li>Affected components, requirements, risks, and decisions — traced across files</li>
+        <li>Recommended actions streamed as markdown in chat</li>
+        <li>May include structured vault update proposals — review in diff preview before applying</li>
       </ul>
     </div>
     <div class="narration">
-      💡 Read-only command — nothing is written. Run it any time to understand downstream effects before committing to a change.
+      💡 Safe to run at any time — no changes are made unless the AI proposes updates and you explicitly click Apply All in the diff preview.
     </div>
     <p class="nav-hint">↓ Wrap up</p>
     <aside class="notes">Impact analysis is safe to run at any time. Great for change advisory board preparation.</aside>
@@ -755,13 +752,13 @@ zero-trust network architecture?</div>
         <li><code>/analyze</code> — impact analysis before making changes</li>
       </ul>
     </div>
-    <p style="margin-top:0.5em">
+    <p style="margin-top:0.25em">
       <strong style="color: var(--ap-yellow)">Next to explore:</strong>
       <code>/archimate</code> — export your vault to Archi or BiZZdesign ·
       <code>/drawio</code> — prepare stakeholder slides ·
       <code>/update</code> — governed document updates
     </p>
-    <div style="margin-top:0.6em; text-align:center">
+    <div style="margin-top:0.25em; text-align:center">
       <a class="cta-link" href="https://enzomar.github.io/archipilot/" target="_blank">🌐 Documentation</a>
       <a class="cta-link ghost" href="https://github.com/enzomar/archipilot" target="_blank">⭐ Star on GitHub</a>
     </div>
@@ -782,7 +779,7 @@ zero-trust network architecture?</div>
     <div class="scenario">
       You've heard of TOGAF, ArchiMate, EA tools. You're not sure if this is for you. <strong>No existing project needed.</strong> Follow the steps and you'll have a full architecture model — with diagrams and ArchiMate export — in under 12 minutes.
     </div>
-    <div class="cols" style="margin-top:0.5em">
+    <div class="cols" style="margin-top:0.3em">
       <div class="card">
         <h4>🎯 Goal</h4>
         <p>Go from zero to a complete architecture vault with AI-generated diagrams and a standards-compliant ArchiMate model — so you can judge for yourself if archipilot fits your workflow.</p>
@@ -825,8 +822,9 @@ zero-trust network architecture?</div>
       <strong style="color:var(--ap-blue)">Watch:</strong>
       <ul>
         <li>27 files appear in Explorer — a complete TOGAF-aligned vault</li>
-        <li>Every phase: Vision → Business → Applications → Technology → Roadmap</li>
-        <li>Plus: ADR log, Risk register, Open questions, Architecture principles</li>
+        <li>Chat shows file listing grouped by ADM phase (Preliminary → A → B → … → H → Requirements → Cross-phase)</li>
+        <li>Every file has YAML front matter with status, ownership, and TOGAF phase info</li>
+        <li>Suggested next: <code>/status</code>, <code>/analyze</code>, <code>/update</code></li>
       </ul>
     </div>
     <div class="narration">
@@ -982,12 +980,14 @@ for a team of 5 developers building a B2C platform?</div>
     </div>
     <div class="cols" style="margin-top:0.3em">
       <div class="expect">
-        <strong style="color:var(--ap-blue)">Expected:</strong>
+        <strong style="color:var(--ap-blue)">Expected in chat:</strong>
         <ul>
-          <li>Scans all vault files</li>
-          <li>Maps elements to ArchiMate 3.2 layers</li>
-          <li>Exports <code>exports/archimate/[name].xml</code></li>
-          <li>Open Exchange format — import into any tool</li>
+          <li>✅ File saved: <code>exports/archimate/[name]_ArchiMate_[timestamp].xml</code> (clickable link)</li>
+          <li>📐 Export summary table — total elements, relationships &amp; views</li>
+          <li>↳ Breakdown by ArchiMate layer (Business, Application, Technology, Motivation…)</li>
+          <li>↳ Breakdown by element type and list of source files</li>
+          <li>🔧 Compatibility table (Archi, BiZZdesign, Sparx EA, ADOIT)</li>
+          <li>🧠 AI analysis of model completeness and enrichment suggestions</li>
         </ul>
       </div>
       <div>
@@ -1022,9 +1022,15 @@ for a team of 5 developers building a B2C platform?</div>
       <button class="copy-btn" onclick="copyCmd('cur-cmd-7',this)">copy</button>
     </div>
     <div class="expect">
-      3 <code>.drawio</code> files in <code>exports/drawio/</code> — As-Is · Target · Migration. Open with the Draw.io VS Code extension or import into Confluence.
+      <strong style="color:var(--ap-blue)">Expected in chat:</strong>
+      <ul>
+        <li>✅ 4 <code>.drawio</code> files saved in <code>exports/drawio/</code> (clickable links)</li>
+        <li>Combined multi-tab file + individual As-Is · Target · Migration diagrams</li>
+        <li>Summary: element counts by layer, migration status breakdown (add/keep/remove)</li>
+        <li>Color legend: 🔴 Remove · 🟢 Add · 🔵 Keep</li>
+      </ul>
     </div>
-    <div class="congrats" style="margin-top:0.5em">
+    <div class="congrats" style="margin-top:0.25em">
       <div class="big">🎉</div>
       <p>In under 12 minutes — from nothing — you built a TOGAF-compliant architecture vault, generated diagrams, and exported an ArchiMate model importable by enterprise tools.</p>
     </div>
@@ -1034,7 +1040,7 @@ for a team of 5 developers building a B2C platform?</div>
         <li><code>/new</code> <code>/decide</code> <code>/diagram</code> <code>/c4</code> <code>/status</code> <code>/todo</code> <code>/archimate</code> <code>/drawio</code></li>
       </ul>
     </div>
-    <div style="text-align:center; margin-top:0.5em">
+    <div style="text-align:center; margin-top:0.25em">
       <a class="cta-link" href="https://enzomar.github.io/archipilot/" target="_blank">🌐 Documentation</a>
       <a class="cta-link ghost" href="https://github.com/enzomar/archipilot" target="_blank">⭐ Star on GitHub</a>
     </div>
@@ -1048,11 +1054,11 @@ for a team of 5 developers building a B2C platform?</div>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
 <section data-background-color="#0f172a">
   <div class="title-slide">
-    <div style="font-size:2.4em; margin-bottom:0.15em;">🧭</div>
+    <div style="font-size:1.8em; margin-bottom:0.1em;">🧭</div>
     <h1>archipilot</h1>
-    <p class="sub">Enterprise Architecture Copilot · Free · Open Source · TOGAF-aligned</p>
-    <hr style="border-color:#334155; margin: 0.8em auto; width: 40%;" />
-    <div class="cols3" style="margin-top:0.8em; text-align:left">
+    <p class="sub">Enterprise Architecture Copilot · TOGAF-aligned</p>
+    <hr style="border-color:#334155; margin: 0.4em auto; width: 40%;" />
+    <div class="cols3" style="margin-top:0.4em; text-align:left">
       <div class="card">
         <h4>📦 Install</h4>
         <p>VS Code → Extensions → search <code>enzomar.archipilot</code></p>
@@ -1067,17 +1073,17 @@ for a team of 5 developers building a B2C platform?</div>
         <p>enzomar.github.io/<br/>archipilot</p>
       </div>
     </div>
-    <div style="margin-top:0.8em; display:flex; justify-content:center; gap:0.5em; flex-wrap:wrap">
-      <div style="font-size:0.7em; background:#1e293b; padding:0.4em 0.75em; border-radius:6px; color:#94a3b8;">
+    <div style="margin-top:0.4em; display:flex; justify-content:center; gap:0.4em; flex-wrap:wrap">
+      <div style="font-size:0.55em; background:#1e293b; padding:0.25em 0.55em; border-radius:4px; color:#94a3b8;">
         🆓 Free · MIT License
       </div>
-      <div style="font-size:0.7em; background:#1e293b; padding:0.4em 0.75em; border-radius:6px; color:#94a3b8;">
+      <div style="font-size:0.55em; background:#1e293b; padding:0.25em 0.55em; border-radius:4px; color:#94a3b8;">
         📄 Works on Markdown files · Git-native
       </div>
-      <div style="font-size:0.7em; background:#1e293b; padding:0.4em 0.75em; border-radius:6px; color:#94a3b8;">
+      <div style="font-size:0.55em; background:#1e293b; padding:0.25em 0.55em; border-radius:4px; color:#94a3b8;">
         🏛 TOGAF ADM aligned
       </div>
-      <div style="font-size:0.7em; background:#1e293b; padding:0.4em 0.75em; border-radius:6px; color:#94a3b8;">
+      <div style="font-size:0.55em; background:#1e293b; padding:0.25em 0.55em; border-radius:4px; color:#94a3b8;">
         🔌 ArchiMate 3.2 · Draw.io export
       </div>
     </div>
@@ -1103,9 +1109,10 @@ for a team of 5 developers building a B2C platform?</div>
     center: false,
     width: 1280,
     height: 720,
-    margin: 0.03,
-    minScale: 0.4,
-    maxScale: 1.3,
+    margin: 0.04,
+    minScale: 0.2,
+    maxScale: 2.0,
+    disableLayout: false,
     plugins: [ RevealHighlight, RevealNotes ]
   });
 
