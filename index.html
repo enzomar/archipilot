@@ -643,6 +643,82 @@
 
     .footer-copy { font-size: .82rem; color: var(--muted); }
 
+    /* ── ONBOARDING ROLE CARDS ──────────────────────────── */
+    .onboard-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 1.75rem 2.5rem;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color .3s, transform .3s, box-shadow .3s;
+      overflow: hidden;
+    }
+
+    .onboard-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      background: radial-gradient(ellipse at top left, var(--card-glow), transparent 70%);
+      opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none;
+    }
+
+    .onboard-card:hover {
+      border-color: var(--card-accent);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px var(--card-glow);
+    }
+
+    .onboard-card:hover::before { opacity: 1; }
+
+    .onboard-icon {
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    .onboard-card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -.01em;
+    }
+
+    .onboard-card p {
+      font-size: .88rem;
+      color: var(--muted);
+      line-height: 1.55;
+      flex: 1;
+    }
+
+    .onboard-meta {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: .04em;
+    }
+
+    .onboard-arrow {
+      position: absolute;
+      bottom: 1.25rem;
+      right: 1.5rem;
+      font-size: 1.3rem;
+      color: var(--card-accent);
+      opacity: 0;
+      transform: translateX(-6px);
+      transition: opacity .25s, transform .25s;
+    }
+
+    .onboard-card:hover .onboard-arrow {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
     /* ── RESPONSIVE ─────────────────────────────────────── */
     @media (max-width: 600px) {
       .nav-links { display: none; }
@@ -668,6 +744,7 @@
   </div>
   <ul class="nav-links">
     <li><a href="#features">Features</a></li>
+    <li><a href="#onboarding">Demo</a></li>
     <li><a href="#community">Community</a></li>
     <li><a href="#faq">FAQ</a></li>
     <li><a href="https://github.com/enzomar/archipilot" target="_blank">GitHub</a></li>
@@ -925,6 +1002,48 @@
         <h4>Export &amp; iterate</h4>
         <p>Run <code style="font-family:monospace;color:#a5b4fc">/archimate</code> or <code style="font-family:monospace;color:#a5b4fc">/drawio</code> to export your diagrams and keep refining them.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ TRY IT — ONBOARDING ════════════════════ -->
+<section id="onboarding" style="border-top:1px solid var(--border);">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div class="section-label" style="text-align:center">Interactive demo</div>
+    <h2 class="section-title" style="text-align:center">Try it yourself — pick your role</h2>
+    <p class="section-sub" style="text-align:center;margin:0 auto 2.5rem">
+      Hands-on exercises you can follow along in VS Code. Requires <a href="https://marketplace.visualstudio.com/items?itemName=enzomar.archipilot" target="_blank" style="color:var(--accent)">archipilot</a> installed and a <a href="https://github.com/features/copilot" target="_blank" style="color:var(--accent)">GitHub Copilot</a> subscription.
+    </p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;">
+
+      <!-- Developer -->
+      <a href="demo/onboarding.html" target="_blank" rel="noopener" class="onboard-card" style="--card-accent:#3b82f6;--card-glow:rgba(59,130,246,.15);">
+        <span class="onboard-icon">💻</span>
+        <h3>Developer</h3>
+        <p>Scaffold a full architecture vault, generate diagrams and record decisions — without leaving VS Code.</p>
+        <span class="onboard-meta">6 steps · ~10 min</span>
+        <span class="onboard-arrow">→</span>
+      </a>
+
+      <!-- Architect -->
+      <a href="demo/onboarding.html" target="_blank" rel="noopener" class="onboard-card" style="--card-accent:#a855f7;--card-glow:rgba(168,85,247,.15);">
+        <span class="onboard-icon">🗺️</span>
+        <h3>Architect</h3>
+        <p>Manage a live EA programme — status dashboards, TODO extraction, impact analysis and governance.</p>
+        <span class="onboard-meta">6 steps · ~10 min</span>
+        <span class="onboard-arrow">→</span>
+      </a>
+
+      <!-- Curious -->
+      <a href="demo/onboarding.html" target="_blank" rel="noopener" class="onboard-card" style="--card-accent:#22c55e;--card-glow:rgba(34,197,94,.15);">
+        <span class="onboard-icon">🔭</span>
+        <h3>Curious</h3>
+        <p>Explore every command from zero — no project needed. End with a full ArchiMate &amp; Draw.io export.</p>
+        <span class="onboard-meta">7 steps · ~12 min</span>
+        <span class="onboard-arrow">→</span>
+      </a>
+
     </div>
   </div>
 </section>
