@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>archipilot Demo 2 — From Zero to ArchiMate</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/night.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css" />
+  <style>
+    :root {
+      --ap-yellow: #f5c518;
+      --ap-green:  #22c55e;
+      --ap-red:    #ef4444;
+      --ap-blue:   #60a5fa;
+      --ap-purple: #a78bfa;
+      --ap-gray:   #94a3b8;
+      --ap-bg:     #0f172a;
+      --ap-card:   #1e293b;
+    }
+
+    .reveal { font-family: 'Segoe UI', system-ui, sans-serif; }
+    .reveal h1, .reveal h2, .reveal h3 { color: var(--ap-yellow); text-transform: none; letter-spacing: -0.02em; }
+    .reveal h1 { font-size: 2em; }
+    .reveal h2 { font-size: 1.3em; border-bottom: 2px solid var(--ap-yellow); padding-bottom: 0.15em; margin-bottom: 0.45em; }
+    .reveal h3 { font-size: 1em; color: var(--ap-blue); margin-bottom: 0.3em; }
+    /* Allow tall slides to scroll instead of clipping */
+    .reveal .slides section {
+      text-align: left;
+      overflow-y: auto;
+      max-height: 680px;
+      box-sizing: border-box;
+    }
+    .reveal ul { margin-left: 0.9em; }
+    .reveal li { margin: 0.25em 0; font-size: 0.8em; }
+    .reveal p  { font-size: 0.8em; margin: 0.25em 0; }
+
+    /* Command block */
+    .cmd {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-left: 4px solid var(--ap-yellow);
+      border-radius: 6px;
+      padding: 0.4em 0.8em;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.78em;
+      color: #e6edf3;
+      margin: 0.3em 0;
+      white-space: pre-wrap;
+    }
+
+    /* Narration */
+    .narration {
+      background: var(--ap-card);
+      border-left: 4px solid var(--ap-green);
+      border-radius: 6px;
+      padding: 0.4em 0.8em;
+      font-style: italic;
+      color: #cbd5e1;
+      font-size: 0.75em;
+      margin: 0.3em 0;
+    }
+
+    /* Expected output */
+    .expect {
+      background: var(--ap-card);
+      border-left: 4px solid var(--ap-blue);
+      border-radius: 6px;
+      padding: 0.35em 0.8em;
+      font-size: 0.74em;
+      color: #94a3b8;
+      margin: 0.3em 0;
+    }
+
+    /* Content snippet */
+    .snippet {
+      background: #0d1117;
+      border: 1px solid #1e3a5f;
+      border-radius: 6px;
+      padding: 0.4em 0.8em;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.68em;
+      color: #7dd3fc;
+      margin: 0.3em 0;
+      white-space: pre-wrap;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 0.15em 0.6em;
+      border-radius: 99px;
+      font-size: 0.72em;
+      font-weight: 600;
+      margin: 0 0.15em;
+    }
+    .pill-red    { background: #450a0a; color: var(--ap-red); }
+    .pill-yellow { background: #422006; color: #fbbf24; }
+    .pill-green  { background: #052e16; color: var(--ap-green); }
+    .pill-blue   { background: #172554; color: var(--ap-blue); }
+    .pill-purple { background: #2e1065; color: var(--ap-purple); }
+
+    .timer {
+      position: absolute; top: 1em; right: 1em;
+      background: #1e293b; color: var(--ap-yellow);
+      border: 1px solid #334155; border-radius: 6px;
+      padding: 0.2em 0.6em; font-size: 0.65em; font-family: monospace;
+    }
+
+    .scene-label {
+      display: inline-block;
+      background: var(--ap-purple); color: #fff;
+      font-weight: 700; font-size: 0.65em;
+      padding: 0.15em 0.7em; border-radius: 4px;
+      margin-bottom: 0.4em; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    .cols  { display: grid; grid-template-columns: 1fr 1fr; gap: 1em; align-items: start; }
+    .cols3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8em; align-items: start; }
+
+    .card {
+      background: var(--ap-card); border: 1px solid #334155; border-radius: 8px;
+      padding: 0.5em 0.75em;
+    }
+    .card h4 { color: var(--ap-yellow); margin: 0 0 0.25em; font-size: 0.78em; }
+    .card p, .card li { font-size: 0.72em; color: #94a3b8; margin: 0.15em 0; }
+
+    .pause { color: var(--ap-yellow); font-weight: 700; font-size: 0.78em; }
+
+    .title-slide { text-align: center; }
+    .title-slide h1 { font-size: 2.4em; margin-bottom: 0.1em; }
+    .title-slide .sub { color: var(--ap-gray); font-size: 0.9em; }
+    .title-slide .meta { margin-top: 1.2em; display: flex; justify-content: center; gap: 2em; flex-wrap: wrap; }
+    .title-slide .meta span { font-size: 0.75em; color: #64748b; }
+    .title-slide .meta strong { color: var(--ap-yellow); }
+
+    .reveal table { width: 100%; font-size: 0.78em; border-collapse: collapse; }
+    .reveal table th { background: #1e293b; color: var(--ap-yellow); padding: 0.4em 0.6em; }
+    .reveal table td { padding: 0.35em 0.6em; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+
+    /* ArchiMate layer legend */
+    .layer {
+      display: flex; align-items: center; gap: 0.5em;
+      padding: 0.4em 0.7em; border-radius: 6px; margin: 0.3em 0;
+      font-size: 0.8em; font-weight: 600;
+    }
+    .layer-bus { background: #fefce8; color: #713f12; }
+    .layer-app { background: #eff6ff; color: #1e3a8a; }
+    .layer-tec { background: #f0fdf4; color: #14532d; }
+    .layer-mot { background: #fdf4ff; color: #581c87; }
+
+    /* Progress bar for the journey */
+    .journey {
+      display: flex; gap: 0.3em; margin: 0.8em 0; flex-wrap: wrap;
+    }
+    .journey-step {
+      padding: 0.2em 0.5em; border-radius: 4px; font-size: 0.6em; font-family: monospace;
+      background: #1e293b; color: #64748b; border: 1px solid #334155;
+      white-space: nowrap;
+    }
+    .journey-step.active { background: var(--ap-yellow); color: #000; font-weight: 700; border-color: var(--ap-yellow); }
+    .journey-step.done   { background: #052e16; color: var(--ap-green); border-color: var(--ap-green); }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- TITLE                                               -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <div class="title-slide">
+    <div style="font-size:2.5em; margin-bottom:0.2em;">🏗️</div>
+    <h1>archipilot</h1>
+    <p class="sub">Enterprise Architecture Copilot for VS Code</p>
+    <hr style="border-color:#334155; margin: 1em auto; width: 40%;" />
+    <p style="color: var(--ap-purple); font-size:1em; font-weight:600;">Demo 2 — From Zero to ArchiMate</p>
+    <p style="color:#64748b; font-size:0.75em;">Day 1 on a new project · Empty folder → Full ArchiMate model · ~8 min</p>
+    <div class="meta">
+      <span><strong>Project:</strong> CloudRetail</span>
+      <span><strong>Scenario:</strong> New architect, nothing written down</span>
+      <span><strong>Money shot:</strong> VS Code left · Archi right</span>
+    </div>
+  </div>
+  <aside class="notes">
+    Demo 2 — the "wow" demo. Start from an empty folder and end with a full ArchiMate model open in Archi. This is the demo that converts viewers into installers.
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SETUP                                               -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Before You Start</span>
+  <h2>Setup Checklist</h2>
+  <div class="cols">
+    <div>
+      <h3>1. Empty folder</h3>
+      <div class="cmd">mkdir ~/Desktop/CloudRetail-Architecture
+code ~/Desktop/CloudRetail-Architecture</div>
+      <h3 style="margin-top:0.8em">2. Required</h3>
+      <div class="card">
+        <ul>
+          <li>Copilot Chat open <code>Cmd+Shift+I</code></li>
+          <li><strong>Archi</strong> installed — archimatetool.com (free)</li>
+          <li>Markdown Mermaid extension (optional)</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h4>🎯 The Story</h4>
+        <p>"Day 1 on a new project. Nothing written down. Architecture in people's heads. Let's build a full model from scratch — and export it to ArchiMate in one session."</p>
+      </div>
+      <div class="card" style="margin-top:0.5em">
+        <h4>💡 Pro tip</h4>
+        <p>Pre-type Scene 3 vault content in a practice run. Record at 2× speed with a caption overlay for the actual recording.</p>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Run Archi ahead of time and check the import flow works. Have the XML path ready to navigate to.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 1 — HOOK                                      -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 1</span>
+  <span class="timer">0:00 – 0:30</span>
+  <h2>The Blank Page Problem</h2>
+  <p><strong>Show:</strong> Empty VS Code window — Explorer panel empty, no files</p>
+  <div class="narration">
+    "Blank page. New project. Architecture in people's heads. This is where most EA efforts stall — getting from nothing to something structured. Let's fix that in under 8 minutes."
+  </div>
+  <div class="journey">
+    <div class="journey-step active">/new</div>
+    <div class="journey-step">fill</div>
+    <div class="journey-step">/decide</div>
+    <div class="journey-step">/diagram</div>
+    <div class="journey-step">/status</div>
+    <div class="journey-step">/todo</div>
+    <div class="journey-step">/update</div>
+    <div class="journey-step">/archimate</div>
+    <div class="journey-step">Archi 🎯</div>
+    <div class="journey-step">/drawio</div>
+  </div>
+  <aside class="notes">The empty folder is the hook. Don't rush — let the emptiness land before saying anything.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 2 — SCAFFOLD                                  -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 2</span>
+  <span class="timer">0:30 – 1:15</span>
+  <h2>Scaffold the Vault</h2>
+  <div class="cmd">@architect /new CloudRetail-Architecture</div>
+  <div class="cols">
+    <div class="expect">
+      <strong style="color:#60a5fa">Expected:</strong>
+      <ul>
+        <li>Explorer fills with <strong>27 TOGAF-aligned files</strong></li>
+        <li><code>00_Architecture_Repository.md</code> opens automatically</li>
+        <li>archipilot suggests starting with <code>A1_Architecture_Vision.md</code></li>
+      </ul>
+    </div>
+    <div>
+      <div class="narration">
+        "One command — 27 structured documents, ready to fill. Every TOGAF phase. A1 is Vision, B1 is Business, C1 is Applications — all the way to Roadmap and Governance. Your architecture notebook."
+      </div>
+      <p class="pause">⏸ Scroll slowly through Explorer — let viewers see the full file list</p>
+    </div>
+  </div>
+  <div class="journey">
+    <div class="journey-step done">/new</div>
+    <div class="journey-step active">fill</div>
+    <div class="journey-step">/decide</div>
+    <div class="journey-step">/diagram</div>
+    <div class="journey-step">/status</div>
+    <div class="journey-step">/todo</div>
+    <div class="journey-step">/update</div>
+    <div class="journey-step">/archimate</div>
+    <div class="journey-step">Archi 🎯</div>
+    <div class="journey-step">/drawio</div>
+  </div>
+  <aside class="notes">The file list scrolling through Explorer is powerful. Don't rush it — viewers need to see 27 files appear from one command.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 3a — VISION                                   -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 3a</span>
+  <span class="timer">1:15 – 1:50</span>
+  <h2>Define the Architecture — Vision</h2>
+  <p>Open <code>A1_Architecture_Vision.md</code> and type:</p>
+  <div class="snippet">## Business Drivers
+- BD-01: Migrate from legacy on-prem e-commerce to cloud-native platform
+- BD-02: Support 10x Black Friday traffic spikes without pre-provisioning
+- BD-03: Real-time personalisation and recommendation engine
+- BD-04: Reduce infrastructure costs by 35% in 18 months
+
+## Constraints
+- CON-01: All customer PII must remain in EU (GDPR)
+- CON-02: Existing ERP (SAP) must be retained — no replacement in scope
+
+## Target: cloud-native on AWS, microservices, event-driven</div>
+  <div class="narration">
+    "Fill in what you know — business drivers, constraints, target. Plain Markdown, no special syntax. Give archipilot enough context and it will do the heavy lifting."
+  </div>
+  <aside class="notes">Type live or use a pre-typed snippet. Real-time typing shows it's just Markdown — no proprietary format. Keep the narration flowing as you type.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 3b — APPLICATION ARCHITECTURE                 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 3b</span>
+  <span class="timer">1:50 – 2:15</span>
+  <h2>Define the Architecture — Applications</h2>
+  <p>Open <code>C1_Application_Architecture.md</code> and type:</p>
+  <div class="cols">
+    <div>
+      <div class="snippet">## Baseline (As-Is)
+- Monolithic Magento 2 on-premises
+- MySQL single instance
+- Manual deployments (FTP)</div>
+    </div>
+    <div>
+      <div class="snippet">## Target (To-Be)
+- API Gateway (AWS API Gateway)
+- Product Catalogue (Node.js)
+- Order Management (Java/Spring)
+- Recommendation Engine (Python/ML)
+- Customer Identity (Cognito)
+- Event Bus (Kafka MSK)
+- Frontend (Next.js / CloudFront)
+- DynamoDB (catalogue) + Aurora (orders)
+
+## Dependencies
+- [[D1_Technology_Architecture]]
+- [[X1_ADR_Decision_Log]]</div>
+    </div>
+  </div>
+  <aside class="notes">The WikiLinks [[...]] are key — they create the knowledge graph that archipilot uses for impact analysis and ArchiMate relationship extraction.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 3c — DECISIONS & RISKS                        -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 3c</span>
+  <span class="timer">2:15 – 2:30</span>
+  <h2>Define the Architecture — Decisions &amp; Risks</h2>
+  <div class="cols">
+    <div>
+      <p>Open <code>X1_ADR_Decision_Log.md</code>:</p>
+      <div class="snippet">## AD-01 — API Gateway
+Status: ✅ Decided — AWS API Gateway
+
+## AD-02 — Database Strategy
+Status: ✅ Decided — DynamoDB + Aurora
+
+## AD-03 — Recommendation Engine
+Status: 🔴 Open
+Options: Build in-house / AWS Personalize
+         / Dynamic Yield</div>
+    </div>
+    <div>
+      <p>Open <code>X2_Risk_Issue_Register.md</code>:</p>
+      <div class="snippet">## R-01 — Migration Continuity
+Probability: Medium | Impact: High
+Mitigation: Blue-green + canary routing
+
+## R-02 — ML Model Cold Start
+Probability: Low | Impact: Medium
+Mitigation: Seed with collaborative
+            filtering (synthetic data)</div>
+    </div>
+  </div>
+  <aside class="notes">Only AD-03 is left open intentionally — this sets up the /decide command in Scene 4. The open decision is the "gap" archipilot will find.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 4 — AI FILLS THE GAPS                         -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 4</span>
+  <span class="timer">2:30 – 3:15</span>
+  <h2>Let archipilot Fill the Gaps</h2>
+  <div class="cmd">@architect What architecture decisions are still open
+and what should I resolve first?</div>
+  <div class="expect" style="margin-bottom:0.5em">
+    archipilot finds: AD-03 is the only open decision · blocks E1 and F1 · recommends running /decide
+  </div>
+  <div class="cmd">@architect /decide AD-03 — evaluate Build in-house vs
+AWS Personalize vs Dynamic Yield for a B2C
+e-commerce recommendation engine with a small
+data science team</div>
+  <div class="expect" style="font-size:0.76em">
+    <strong>Expected analysis:</strong>
+    Build in-house: 6–9 months, needs ML ops ·
+    <strong>AWS Personalize: ✅ recommended</strong> — managed, fast TTY, €800–2000/mo ·
+    Dynamic Yield: €15k+/mo, SaaS lock-in
+  </div>
+  <div class="cmd">@architect /update Record decision AD-03: adopt AWS Personalize
+for Phase 1. Rationale: managed, fast time-to-value,
+team has no ML ops capacity. Revisit in Phase 2.</div>
+  <div style="background:#052e16; border-radius:6px; padding:0.4em 0.8em; font-size:0.75em; color:var(--ap-green);">
+    👆 Show diff preview → Click Apply All
+  </div>
+  <div class="narration" style="margin-top:0.4em">
+    "Grounded analysis — not generic advice. One command updates the decision log with full governance."
+  </div>
+  <div class="journey">
+    <div class="journey-step done">/new</div>
+    <div class="journey-step done">fill</div>
+    <div class="journey-step done">/decide</div>
+    <div class="journey-step active">/diagram</div>
+    <div class="journey-step">/status</div>
+    <div class="journey-step">/todo</div>
+    <div class="journey-step">/update</div>
+    <div class="journey-step">/archimate</div>
+    <div class="journey-step">Archi 🎯</div>
+    <div class="journey-step">/drawio</div>
+  </div>
+  <aside class="notes">This is the second-best moment in the demo. Show the diff preview clearly. The fact that archipilot found the gap AND resolved it AND documented it in one flow is compelling.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 5 — DIAGRAMS                                  -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 5</span>
+  <span class="timer">3:15 – 4:00</span>
+  <h2>Generate Diagrams</h2>
+  <div class="cols">
+    <div>
+      <h3>Context diagram</h3>
+      <div class="cmd">@architect /diagram</div>
+      <div class="expect">
+        Mermaid <code>flowchart LR</code> generated from WikiLinks in C1 · inserted under <code>## Context Diagram</code>
+      </div>
+    </div>
+    <div>
+      <h3>C4 model</h3>
+      <div class="cmd">@architect /c4</div>
+      <div class="expect">
+        C4 Context diagram · shows CloudRetail system, customers, merchants, external systems (SAP, payment gateway, AWS Personalize)
+      </div>
+    </div>
+  </div>
+  <div class="narration" style="margin-top:0.6em">
+    "/diagram generates a context diagram directly from what you've written — no diagramming tool needed. /c4 gives you the standard C4 model, grounding your architecture in a universally understood notation."
+  </div>
+  <aside class="notes">Open C1_Application_Architecture.md before running /diagram — the command targets the active file. Show the Mermaid preview with the Markdown Mermaid extension.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 6 — STATUS + TODO                             -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 6</span>
+  <span class="timer">4:00 – 4:30</span>
+  <h2>Vault Health Check</h2>
+  <div class="cols">
+    <div>
+      <div class="cmd">@architect /status</div>
+      <div class="expect">
+        <ul>
+          <li>A1: <span class="pill pill-green">Approved</span> · C1: <span class="pill pill-yellow">Draft</span></li>
+          <li>D1: <span class="pill pill-red">Empty</span> — Phase D gate at risk</li>
+          <li>0 open decisions (AD-03 resolved ✅)</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="cmd">@architect /todo</div>
+      <div class="expect">
+        <ul>
+          <li><span class="pill pill-red">HIGH</span> D1 Technology Architecture — empty</li>
+          <li><span class="pill pill-yellow">MED</span> R-01 Migration continuity — not started</li>
+          <li><span class="pill pill-yellow">MED</span> R-02 ML cold start — not started</li>
+          <li><span class="pill pill-yellow">MED</span> R1 Requirements — not captured</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="narration">
+    "/todo tells you exactly what to work on next. D1 Technology Architecture is empty. Let's fix that."
+  </div>
+  <div class="journey">
+    <div class="journey-step done">/new</div>
+    <div class="journey-step done">fill</div>
+    <div class="journey-step done">/decide</div>
+    <div class="journey-step done">/diagram</div>
+    <div class="journey-step done">/status</div>
+    <div class="journey-step done">/todo</div>
+    <div class="journey-step active">/update</div>
+    <div class="journey-step">/archimate</div>
+    <div class="journey-step">Archi 🎯</div>
+    <div class="journey-step">/drawio</div>
+  </div>
+  <aside class="notes">The empty D1 flag is a natural setup for Scene 7 — /update will fill it in. Good narrative flow.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 7 — UPDATE D1                                 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 7</span>
+  <span class="timer">4:30 – 5:00</span>
+  <h2>Update D1 — Technology Architecture</h2>
+  <div class="cmd">@architect /update Add to D1_Technology_Architecture:
+Target stack — AWS EKS for container orchestration,
+Kafka MSK for event bus, AWS API Gateway,
+CloudFront + S3 for frontend, Aurora PostgreSQL
+for orders, DynamoDB for catalogue, Cognito
+for identity. Primary region: eu-west-1. DR: eu-central-1.</div>
+  <div class="cols" style="margin-top:0.5em">
+    <div class="expect">
+      <strong style="color:#60a5fa">Expected:</strong>
+      <ul>
+        <li>Diff preview shows D1 populated</li>
+        <li>Technology stack sections added</li>
+        <li>Click Apply All</li>
+      </ul>
+    </div>
+    <div class="narration">
+      "Instead of opening each file manually, tell archipilot what to add. Diff preview, confirm, done. With governance."
+    </div>
+  </div>
+  <aside class="notes">After applying, briefly navigate to D1 to show it's now populated. This reinforces the before/after — empty vault → structured document in seconds.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 8 — ARCHIMATE                                 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 8 ⭐</span>
+  <span class="timer">5:00 – 6:30</span>
+  <h2>Export to ArchiMate 3.2</h2>
+  <div class="cmd">@architect /archimate</div>
+  <div class="cols">
+    <div>
+      <div class="expect">
+        <strong style="color:#60a5fa">Model summary:</strong>
+        <div class="layer layer-bus">🏢 Business Layer — 4 elements</div>
+        <div class="layer layer-app">📱 Application Layer — 9 elements</div>
+        <div class="layer layer-tec">⚙️ Technology Layer — 7 elements</div>
+        <div class="layer layer-mot">🎯 Motivation — 4 drivers · 3 risks · 3 decisions</div>
+        <p style="margin-top:0.4em">5 auto-generated views</p>
+        <p>📄 <code>exports/archimate/CloudRetail-ArchiMate.xml</code></p>
+      </div>
+    </div>
+    <div>
+      <div class="narration">
+        "Now the centrepiece — /archimate. It reads the entire vault and generates a standards-compliant ArchiMate 3.2 model. Every component, every relationship, every business driver — mapped to the correct ArchiMate layer and element type."
+      </div>
+      <p class="pause">⏸ Show the XML file briefly in Explorer before opening Archi</p>
+    </div>
+  </div>
+  <div class="journey">
+    <div class="journey-step done">/new</div>
+    <div class="journey-step done">fill</div>
+    <div class="journey-step done">/decide</div>
+    <div class="journey-step done">/diagram</div>
+    <div class="journey-step done">/status</div>
+    <div class="journey-step done">/todo</div>
+    <div class="journey-step done">/update</div>
+    <div class="journey-step done">/archimate</div>
+    <div class="journey-step active">Archi 🎯</div>
+    <div class="journey-step">/drawio</div>
+  </div>
+  <aside class="notes">Read the model summary from the chat output. Pause on it. Then show the XML file (just 5 seconds) before switching to Archi. The XML proves it's a real standard — not a proprietary format.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 9 — ARCHI IMPORT ⭐ MONEY SHOT               -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 9 🎯 Money Shot</span>
+  <span class="timer">6:30 – 7:15</span>
+  <h2>Open in Archi</h2>
+  <div class="cols">
+    <div>
+      <h3>Steps</h3>
+      <ol style="font-size:0.8em; line-height:1.8;">
+        <li>Open <strong>Archi</strong> (archimatetool.com — free)</li>
+        <li>File → Import → <strong>Open Exchange File</strong></li>
+        <li>Navigate to <code>exports/archimate/CloudRetail-ArchiMate.xml</code></li>
+        <li>Expand the <strong>Model Tree</strong> — show all 4 folders</li>
+        <li>Open <strong>Full Layered View</strong></li>
+        <li>Open <strong>Application View</strong></li>
+      </ol>
+    </div>
+    <div>
+      <div class="narration">
+        "Import directly into Archi — free, open-source, the standard tool for ArchiMate. In under 7 minutes, from an empty folder, we have a full layered architecture model. Business drivers connected to application components connected to technology. This would have taken days in traditional tools."
+      </div>
+      <div style="background:#450a0a; border-radius:6px; padding:0.5em 0.8em; font-size:0.78em; color: var(--ap-red); margin-top:0.5em;">
+        🎯 <strong>LINGER HERE.</strong> This is the wow moment. Let the diagram breathe.
+      </div>
+    </div>
+  </div>
+  <aside class="notes">This is THE moment. Side-by-side if possible: VS Code on left, Archi Full Layered View on right. Don't rush. The silence while the full diagram is visible is powerful. Let it render and just... wait.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 10 — DRAWIO BONUS                             -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 10 — Bonus</span>
+  <span class="timer">7:15 – 7:45</span>
+  <h2>Draw.io for Stakeholders</h2>
+  <div class="cmd">@architect /drawio</div>
+  <div class="cols">
+    <div class="expect">
+      <strong style="color:#60a5fa">Expected — 3 files in exports/drawio/:</strong>
+      <ul>
+        <li><span class="pill pill-red">As-Is</span> Magento monolith in red — to retire</li>
+        <li><span class="pill pill-green">Target</span> all cloud components in green</li>
+        <li><span class="pill pill-blue">Migration</span> colour-coded overlay</li>
+      </ul>
+      <p style="margin-top:0.4em">Open in VS Code with the Draw.io Integration extension — show the 3 tabs</p>
+    </div>
+    <div class="narration">
+      "If your stakeholders prefer Draw.io over ArchiMate — one more command. As-Is, Target, and Migration diagrams, ready for Confluence, PowerPoint, or your next board presentation."
+    </div>
+  </div>
+  <div class="journey">
+    <div class="journey-step done">/new</div>
+    <div class="journey-step done">fill</div>
+    <div class="journey-step done">/decide</div>
+    <div class="journey-step done">/diagram</div>
+    <div class="journey-step done">/status</div>
+    <div class="journey-step done">/todo</div>
+    <div class="journey-step done">/update</div>
+    <div class="journey-step done">/archimate</div>
+    <div class="journey-step done">Archi 🎯</div>
+    <div class="journey-step active">/drawio</div>
+  </div>
+  <aside class="notes">This is the bonus scene — keep it short. The ArchiMate import was the climax; Draw.io is the encore.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 11 — WRAP UP                                  -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 11</span>
+  <span class="timer">7:45 – 8:00</span>
+  <h2>Wrap Up</h2>
+  <p><strong>Show:</strong> VS Code (vault) on the left · Archi (full layered view) on the right</p>
+  <div class="narration">
+    "From empty folder to full ArchiMate model in 8 minutes. All documents version-controlled in Git. All decisions governed. All diagrams generated. That's archipilot — your architecture Copilot, inside VS Code. Free, open source, TOGAF-aligned. Link in the description."
+  </div>
+  <div style="text-align:center; margin-top:1.2em;">
+    <p style="color:var(--ap-yellow); font-size:1em; font-weight:600;">enzomar.github.io/archipilot</p>
+    <p style="color:var(--ap-gray); font-size:0.75em;">marketplace.visualstudio.com/items?itemName=enzomar.archipilot</p>
+  </div>
+  <aside class="notes">End on the side-by-side shot. Hold for 5 seconds with the URL visible.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- TIPS                                                -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <h2>Recording Tips</h2>
+  <table>
+    <tr><th>Tip</th><th>Detail</th></tr>
+    <tr><td>Pre-type Scene 3</td><td>Record typing at 2× speed with a "5 min later" caption</td></tr>
+    <tr><td>Linger on Scene 9</td><td>The Archi diagram is the money shot — don't rush it</td></tr>
+    <tr><td>Open Archi before recording</td><td>Practice the import so you know the exact clicks</td></tr>
+    <tr><td>Show XML briefly</td><td>5 seconds of raw XML proves it's a real standard</td></tr>
+    <tr><td>Side-by-side final shot</td><td>VS Code left · Archi right for the wrap-up</td></tr>
+  </table>
+  <h3 style="margin-top:0.8em">Fallback if Archi fails</h3>
+  <div class="cmd">@architect /analyze Does the exported ArchiMate model
+have full cross-layer traceability from
+business drivers to technology components?</div>
+  <aside class="notes">Know the fallback cold. If Archi crashes mid-demo (it happens), pivot immediately to this command and discuss the model in chat.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- VIDEO DESCRIPTION                                   -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <h2>Suggested Video Description</h2>
+  <div class="snippet" style="font-size:0.75em; color:#e2e8f0;">From blank folder to full ArchiMate model in 8 minutes — archipilot for VS Code.
+
+In this demo I start with nothing and build a cloud retail architecture
+from scratch using archipilot — TOGAF-aligned Enterprise Architecture
+copilot inside VS Code Copilot Chat.
+
+Commands shown:
+/new → /decide → /update → /diagram → /c4 → /status → /todo → /archimate → /drawio
+
+The ArchiMate export is importable by Archi (free), BiZZdesign, Sparx EA, and ADOIT.
+
+🔗 Install: https://marketplace.visualstudio.com/items?itemName=enzomar.archipilot
+🌐 Website: https://enzomar.github.io/archipilot/
+⭐ GitHub:  https://github.com/enzomar/archipilot</div>
+  <h3 style="margin-top:0.6em">Tags</h3>
+  <p style="font-size:0.72em; color:#64748b;">enterprise architecture · TOGAF · archipilot · VS Code extension · GitHub Copilot · ArchiMate · Draw.io · solution architecture · EA tools</p>
+  <aside class="notes">Copy this into the YouTube/Loom description field before publishing.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- CTA                                                 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <div class="title-slide">
+    <h1 style="font-size:1.8em;">🧭 archipilot</h1>
+    <p style="color:var(--ap-blue); font-size:0.9em;">Enterprise Architecture Copilot · Free · Open Source · TOGAF-aligned</p>
+    <hr style="border-color:#334155; margin: 0.8em auto; width: 40%;" />
+    <div class="cols3" style="margin-top:1em">
+      <div class="card" style="text-align:center">
+        <h4>⭐ Star</h4>
+        <p>github.com/enzomar/archipilot</p>
+      </div>
+      <div class="card" style="text-align:center">
+        <h4>📦 Install</h4>
+        <p>ext install<br/>enzomar.archipilot</p>
+      </div>
+      <div class="card" style="text-align:center">
+        <h4>🌐 Website</h4>
+        <p>enzomar.github.io/<br/>archipilot</p>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Hold for 5 seconds. End card.</aside>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'slide',
+    backgroundTransition: 'fade',
+    progress: true,
+    controls: true,
+    center: false,
+    width: 1280,
+    height: 720,
+    margin: 0.03,
+    minScale: 0.5,
+    maxScale: 1.2,
+    plugins: [ RevealHighlight, RevealNotes ]
+  });
+</script>
+</body>
+</html>

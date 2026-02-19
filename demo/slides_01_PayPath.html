@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>archipilot Demo 1 — PayPath</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/night.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css" />
+  <style>
+    :root {
+      --ap-yellow: #f5c518;
+      --ap-green:  #22c55e;
+      --ap-red:    #ef4444;
+      --ap-blue:   #60a5fa;
+      --ap-gray:   #94a3b8;
+      --ap-bg:     #0f172a;
+      --ap-card:   #1e293b;
+    }
+
+    .reveal { font-family: 'Segoe UI', system-ui, sans-serif; }
+    .reveal h1, .reveal h2, .reveal h3 { color: var(--ap-yellow); text-transform: none; letter-spacing: -0.02em; }
+    .reveal h1 { font-size: 2em; }
+    .reveal h2 { font-size: 1.3em; border-bottom: 2px solid var(--ap-yellow); padding-bottom: 0.15em; margin-bottom: 0.45em; }
+    .reveal h3 { font-size: 1em; color: var(--ap-blue); margin-bottom: 0.3em; }
+    /* Allow tall slides to scroll instead of clipping */
+    .reveal .slides section {
+      text-align: left;
+      overflow-y: auto;
+      max-height: 680px;
+      box-sizing: border-box;
+    }
+    .reveal ul { margin-left: 0.9em; }
+    .reveal li { margin: 0.25em 0; font-size: 0.82em; }
+    .reveal p  { font-size: 0.82em; margin: 0.3em 0; }
+
+    /* Command block */
+    .cmd {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-left: 4px solid var(--ap-yellow);
+      border-radius: 6px;
+      padding: 0.45em 0.8em;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.82em;
+      color: #e6edf3;
+      margin: 0.35em 0;
+      white-space: pre;
+    }
+
+    /* Narration quote */
+    .narration {
+      background: var(--ap-card);
+      border-left: 4px solid var(--ap-green);
+      border-radius: 6px;
+      padding: 0.45em 0.8em;
+      font-style: italic;
+      color: #cbd5e1;
+      font-size: 0.78em;
+      margin: 0.35em 0;
+    }
+
+    /* Expected output */
+    .expect {
+      background: var(--ap-card);
+      border-left: 4px solid var(--ap-blue);
+      border-radius: 6px;
+      padding: 0.4em 0.8em;
+      font-size: 0.76em;
+      color: #94a3b8;
+      margin: 0.35em 0;
+    }
+
+    /* Pill badges */
+    .pill {
+      display: inline-block;
+      padding: 0.15em 0.6em;
+      border-radius: 99px;
+      font-size: 0.72em;
+      font-weight: 600;
+      margin: 0 0.15em;
+    }
+    .pill-red    { background: #450a0a; color: var(--ap-red); }
+    .pill-yellow { background: #422006; color: #fbbf24; }
+    .pill-green  { background: #052e16; color: var(--ap-green); }
+    .pill-blue   { background: #172554; color: var(--ap-blue); }
+
+    /* Timer badge */
+    .timer {
+      position: absolute; top: 1em; right: 1em;
+      background: #1e293b; color: var(--ap-yellow);
+      border: 1px solid #334155; border-radius: 6px;
+      padding: 0.2em 0.6em; font-size: 0.65em; font-family: monospace;
+    }
+
+    /* Scene label */
+    .scene-label {
+      display: inline-block;
+      background: var(--ap-yellow); color: #000;
+      font-weight: 700; font-size: 0.65em;
+      padding: 0.15em 0.7em; border-radius: 4px;
+      margin-bottom: 0.4em; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    /* Two-column layout */
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; align-items: start; }
+    .cols3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8em; align-items: start; }
+
+    /* Card */
+    .card {
+      background: var(--ap-card); border: 1px solid #334155; border-radius: 8px;
+      padding: 0.55em 0.8em;
+    }
+    .card h4 { color: var(--ap-yellow); margin: 0 0 0.3em; font-size: 0.8em; }
+    .card p, .card li { font-size: 0.74em; color: #94a3b8; margin: 0.2em 0; }
+
+    /* Pause indicator */
+    .pause { color: var(--ap-yellow); font-weight: 700; font-size: 0.78em; }
+
+    /* Title slide */
+    .title-slide { text-align: center; }
+    .title-slide h1 { font-size: 2.4em; margin-bottom: 0.1em; }
+    .title-slide .sub { color: var(--ap-gray); font-size: 0.9em; }
+    .title-slide .meta { margin-top: 1.2em; display: flex; justify-content: center; gap: 2em; }
+    .title-slide .meta span { font-size: 0.75em; color: #64748b; }
+    .title-slide .meta strong { color: var(--ap-yellow); }
+
+    /* Table */
+    .reveal table { width: 100%; font-size: 0.78em; border-collapse: collapse; }
+    .reveal table th { background: #1e293b; color: var(--ap-yellow); padding: 0.4em 0.6em; }
+    .reveal table td { padding: 0.35em 0.6em; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+    .reveal table tr:hover td { background: #1e293b44; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- TITLE                                               -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <div class="title-slide">
+    <div style="font-size:2.5em; margin-bottom:0.2em;">🧭</div>
+    <h1>archipilot</h1>
+    <p class="sub">Enterprise Architecture Copilot for VS Code</p>
+    <hr style="border-color:#334155; margin: 1em auto; width: 40%;" />
+    <p style="color: var(--ap-blue); font-size:1em; font-weight:600;">Demo 1 — PayPath</p>
+    <p style="color:#64748b; font-size:0.75em;">Payment Platform Modernisation · Pre-populated vault · ~6 min</p>
+    <div class="meta">
+      <span><strong>Project:</strong> PayPath</span>
+      <span><strong>Scenario:</strong> Managing a live EA programme</span>
+      <span><strong>Duration:</strong> ~6 min</span>
+    </div>
+  </div>
+  <aside class="notes">
+    Welcome. This is Demo 1 — showing archipilot against a pre-populated architecture vault for a payment platform modernisation project called PayPath.
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SETUP                                               -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Before You Start</span>
+  <h2>Setup Checklist</h2>
+  <div class="cols">
+    <div>
+      <h3>1. Copy sample vault</h3>
+      <div class="cmd">cp -r demo/sample-vault \
+  ~/Desktop/PayPath-Architecture</div>
+      <h3 style="margin-top:0.8em">2. Open in VS Code</h3>
+      <div class="cmd">code ~/Desktop/PayPath-Architecture</div>
+    </div>
+    <div>
+      <div class="card">
+        <h4>✅ Checklist</h4>
+        <ul>
+          <li>Copilot Chat open <code>Cmd+Shift+I</code></li>
+          <li>VS Code font size ≥ 14</li>
+          <li>Chat pane ≥ 50% width</li>
+          <li>Notifications dismissed</li>
+          <li>Markdown Mermaid extension installed</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Run through this checklist before hitting record. The sample vault in demo/sample-vault has all the pre-populated data needed.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 1 — HOOK                                      -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 1</span>
+  <span class="timer">0:00 – 0:30</span>
+  <h2>The Problem</h2>
+  <p><strong>Show:</strong> Open <code>X1_ADR_Decision_Log.md</code> — multiple open decisions visible</p>
+  <div class="narration">
+    "Enterprise architecture decisions buried in spreadsheets. Risks tracked in emails. Impact assessments that take days. Meet archipilot — your architecture copilot inside VS Code."
+  </div>
+  <aside class="notes">Hook the viewer immediately. Show the messy open decisions in the ADR log before saying a word.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 2 — STATUS                                    -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 2</span>
+  <span class="timer">0:30 – 1:15</span>
+  <h2>Vault Health Dashboard</h2>
+  <div class="cmd">@architect /status</div>
+  <div class="cols">
+    <div class="expect">
+      <strong style="color:#60a5fa">Expected output:</strong>
+      <ul>
+        <li>4 documents <span class="pill pill-yellow">draft</span></li>
+        <li>3 documents <span class="pill pill-blue">review</span></li>
+        <li>3 open architecture decisions</li>
+        <li>5 open risks — 2 <span class="pill pill-red">High</span></li>
+        <li>4 open questions</li>
+        <li>7 pending work packages</li>
+      </ul>
+    </div>
+    <div>
+      <div class="narration">
+        "The /status command gives you an instant health check. Four documents still in draft, three open decisions blocking delivery, two high-severity risks. This is PayPath — let's work through it."
+      </div>
+      <p class="pause">⏸ Pause — let the dashboard render fully</p>
+    </div>
+  </div>
+  <aside class="notes">Pause deliberately before narrating. Let the audience read the dashboard. The numbers tell the story.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 3 — TODO                                      -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 3</span>
+  <span class="timer">1:15 – 1:50</span>
+  <h2>What Should We Work on First?</h2>
+  <div class="cmd">@architect /todo</div>
+  <div class="expect">
+    <strong style="color:#60a5fa">Expected — prioritised action list:</strong>
+    <ul>
+      <li><span class="pill pill-red">HIGH</span> AD-01 API Gateway — open, blocking 3 work packages</li>
+      <li><span class="pill pill-red">HIGH</span> Risk R-03 PCI-DSS compliance gap — mitigation not started</li>
+      <li><span class="pill pill-yellow">MED</span> AD-02 Message Bus — open, target date overdue</li>
+      <li><span class="pill pill-yellow">MED</span> FR-04 Real-time fraud detection — no owner assigned</li>
+      <li><span class="pill pill-green">LOW</span> Q-03 Multi-cloud strategy — target date next month</li>
+    </ul>
+  </div>
+  <div class="narration">
+    "/todo scans the entire vault — decisions, risks, open questions, requirements — and returns a prioritised action list. Two critical blockers: the API Gateway decision and a PCI-DSS compliance gap."
+  </div>
+  <aside class="notes">/todo is often the first thing a returning architect runs on Monday morning. Show the prioritisation logic clearly.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 4 — ADR                                       -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 4</span>
+  <span class="timer">1:50 – 2:45</span>
+  <h2>Record a Decision</h2>
+  <div class="cmd">@architect /adr Adopt Kong as the API Gateway for all external traffic</div>
+  <div class="expect">
+    <strong style="color:#60a5fa">Expected:</strong>
+    <ul>
+      <li>Diff preview opens — new entry added to <code>X1_ADR_Decision_Log.md</code></li>
+      <li>ID: <code>AD-04</code> / Status: <span class="pill pill-yellow">🟡 Proposed</span> / Date: today</li>
+    </ul>
+  </div>
+  <div style="margin: 0.5em 0; padding: 0.4em 0.8em; background:#052e16; border-radius:6px; font-size:0.78em; color: var(--ap-green);">
+    👆 Click <strong>Apply All</strong> in the diff preview
+  </div>
+  <div class="narration">
+    "Let's record a new decision. /adr appends a structured Architecture Decision Record — with status, date, context, and template sections ready to fill."
+  </div>
+  <p class="pause">⏸ Navigate to X1_ADR_Decision_Log.md to confirm the new entry</p>
+  <aside class="notes">The diff preview is a key safety feature. Show it explicitly before clicking Apply All — viewers need to understand that nothing is written without confirmation.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 5 — DECIDE                                    -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 5</span>
+  <span class="timer">2:45 – 3:30</span>
+  <h2>Structured Decision Analysis</h2>
+  <div class="cmd">@architect /decide AD-01 API Gateway — evaluate Kong,
+AWS API Gateway, and Azure APIM given our
+PCI-DSS requirements and multi-cloud strategy</div>
+  <div class="expect">
+    <strong style="color:#60a5fa">Expected — vault-grounded analysis:</strong>
+    <ul>
+      <li>Context drawn from vault: PCI-DSS risk, multi-cloud question, team skills</li>
+      <li>Pros/cons table for each option</li>
+      <li>Recommended option with rationale</li>
+      <li>Suggested follow-up <code>/update</code> command</li>
+    </ul>
+  </div>
+  <div class="narration">
+    "/decide doesn't give generic advice — it reads your actual architecture. It knows about the PCI-DSS risk, the multi-cloud question, your team's skills from the stakeholder map. The recommendation is grounded in your context."
+  </div>
+  <aside class="notes">Emphasise that the analysis references real vault content — PCI-DSS risk R-03, multi-cloud question Q-03, stakeholder skills from A2. This is the key differentiator vs a generic ChatGPT question.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 6 — ANALYZE                                   -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 6</span>
+  <span class="timer">3:30 – 4:15</span>
+  <h2>Impact Analysis</h2>
+  <div class="cmd">@architect /analyze What is the impact of replacing
+the legacy payment processor with a cloud-native
+event-driven architecture?</div>
+  <div class="cols">
+    <div class="expect">
+      <strong style="color:#60a5fa">Expected coverage:</strong>
+      <ul>
+        <li>Affected components (C1)</li>
+        <li>Affected requirements (FR-01, FR-04, NFR-02)</li>
+        <li>Risks triggered / mitigated (R-02, R-05)</li>
+        <li>Decisions that become relevant (AD-02, AD-03)</li>
+        <li>Migration complexity estimate</li>
+      </ul>
+    </div>
+    <div class="narration">
+      "Before committing to a change, ask archipilot for an impact analysis. It traces through the entire vault — components, requirements, risks, decisions — and tells you exactly what would be affected."
+    </div>
+  </div>
+  <aside class="notes">This is a read-only command — no files are touched. Safe to run at any time. Emphasise this to the audience.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 7 — UPDATE                                    -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 7</span>
+  <span class="timer">4:15 – 4:50</span>
+  <h2>Governed Document Update</h2>
+  <div class="cmd">@architect /update Mark risk R-03 (PCI-DSS compliance gap)
+mitigation as "In Progress" — owner Security Team,
+target date 2026-04-30</div>
+  <div class="cols">
+    <div class="expect">
+      <strong style="color:#60a5fa">Expected:</strong>
+      <ul>
+        <li>Diff preview shows change in <code>X2_Risk_Issue_Register.md</code></li>
+        <li>Owner column updated → Security Team</li>
+        <li>Status → <span class="pill pill-yellow">🟡 In Progress</span></li>
+      </ul>
+    </div>
+    <div>
+      <div style="background:#052e16; border-radius:6px; padding:0.6em 0.8em; font-size:0.78em; color:var(--ap-green);">
+        👆 Click <strong>Apply All</strong>
+      </div>
+      <div class="narration" style="margin-top:0.5em">
+        "Plain English instruction, diff preview, one click to confirm. Every change is backed up automatically with a timestamped copy."
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Show the backup path (.archipilot/backups/) after applying if time allows — it reinforces the safety story.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 8 — DRAWIO                                    -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 8</span>
+  <span class="timer">4:50 – 5:30</span>
+  <h2>Export to Draw.io</h2>
+  <div class="cmd">@architect /drawio</div>
+  <div class="cols">
+    <div class="expect">
+      <strong style="color:#60a5fa">Expected:</strong>
+      <ul>
+        <li>3 <code>.drawio</code> files in <code>exports/drawio/</code></li>
+        <li><span class="pill pill-red">🔴 Remove</span> 2 components retiring</li>
+        <li><span class="pill pill-green">🟢 Add</span> 4 new components</li>
+        <li><span class="pill pill-blue">🔵 Keep</span> 6 unchanged</li>
+      </ul>
+    </div>
+    <div>
+      <p style="font-size:0.78em; color:#94a3b8;">Open the <code>.drawio</code> file with the Draw.io VS Code extension to show the three tabs: As-Is · Target · Migration</p>
+      <div class="narration">
+        "/drawio creates three views automatically — current state, target, and a migration overlay. Red components retiring, green new, blue unchanged. Open in VS Code or Confluence."
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Open the drawio file in VS Code using the Draw.io Integration extension. Show all three tabs to demonstrate the three-view structure.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 9 — ARCHIMATE                                 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 9</span>
+  <span class="timer">5:30 – 5:55</span>
+  <h2>Export to ArchiMate 3.2</h2>
+  <div class="cmd">@architect /archimate</div>
+  <div class="expect">
+    <strong style="color:#60a5fa">Expected — ArchiMate model summary:</strong>
+    <div class="cols" style="margin-top:0.4em">
+      <ul>
+        <li>Business Layer: 5 elements</li>
+        <li>Application Layer: 8 elements</li>
+      </ul>
+      <ul>
+        <li>Technology Layer: 6 elements</li>
+        <li>Motivation: principles + decisions + risks</li>
+      </ul>
+    </div>
+    <p style="margin-top:0.4em">Output: <code>exports/archimate/PayPath-ArchiMate.xml</code></p>
+    <p>Compatible with: <strong>Archi · BiZZdesign · Sparx EA · ADOIT</strong></p>
+  </div>
+  <div class="narration">
+    "For enterprise tooling — export to ArchiMate 3.2. Import the XML into Archi, BiZZdesign, or Sparx EA. One command, full model."
+  </div>
+  <aside class="notes">Keep this scene brief — the big ArchiMate moment is in Demo 2. Here it's a coda showing breadth.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCENE 10 — WRAP UP                                  -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <span class="scene-label">Scene 10</span>
+  <span class="timer">5:55 – 6:15</span>
+  <h2>Wrap Up</h2>
+  <p><strong>Show:</strong> Sidebar — Architecture Health view with green/amber indicators</p>
+  <div class="narration">
+    "archipilot — your architecture copilot, right inside VS Code. Record decisions, assess impact, govern changes, export to enterprise tools — all from Copilot Chat, all from your Markdown vault. Free, open source, TOGAF-aligned."
+  </div>
+  <div style="text-align:center; margin-top:1.2em;">
+    <p style="color:var(--ap-yellow); font-size:1em; font-weight:600;">enzomar.github.io/archipilot</p>
+    <p style="color:var(--ap-gray); font-size:0.75em;">marketplace.visualstudio.com/items?itemName=enzomar.archipilot</p>
+  </div>
+  <aside class="notes">End on the URLs. Linger for 5 seconds so viewers can screenshot them.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- TIPS                                                -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <h2>Recording Tips</h2>
+  <table>
+    <tr><th>Tip</th><th>Detail</th></tr>
+    <tr><td>Slow down on typing</td><td>Viewers need to read commands</td></tr>
+    <tr><td>Pause after responses</td><td>Let AI output fully render</td></tr>
+    <tr><td>60% chat pane width</td><td>Commands vs output both readable</td></tr>
+    <tr><td>Dismiss notifications</td><td>VS Code popups break the flow</td></tr>
+    <tr><td>Record at 1920×1080</td><td>Standard for YouTube / Loom</td></tr>
+    <tr><td>Trim dead air</td><td>Edit out waiting time in post</td></tr>
+  </table>
+  <aside class="notes">Use this as a pre-flight checklist before starting the recording session.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- FALLBACKS                                           -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <h2>Fallback Commands</h2>
+  <p style="font-size:0.78em; color:#64748b;">If the AI response isn't great, use these instead:</p>
+  <table>
+    <tr><th>Scene</th><th>Primary</th><th>Fallback</th></tr>
+    <tr>
+      <td>/decide</td>
+      <td><code>@architect /decide AD-01 evaluate options</code></td>
+      <td><code>@architect What are the pros and cons of Kong vs AWS API Gateway for PCI-DSS compliance?</code></td>
+    </tr>
+    <tr>
+      <td>/analyze</td>
+      <td><code>@architect /analyze replacing legacy processor</code></td>
+      <td><code>@architect Which components depend on the Legacy Payment Processor?</code></td>
+    </tr>
+    <tr>
+      <td>/todo</td>
+      <td><code>@architect /todo</code></td>
+      <td><code>@architect /todo What are the highest priority blockers?</code></td>
+    </tr>
+  </table>
+  <aside class="notes">Have these ready on a second monitor or sticky note. LLM responses can vary — know your fallbacks.</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- CTA                                                 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section data-background-color="#0f172a">
+  <div class="title-slide">
+    <h1 style="font-size:1.8em;">🧭 archipilot</h1>
+    <p style="color:var(--ap-blue); font-size:0.9em;">Enterprise Architecture Copilot · Free · Open Source · TOGAF-aligned</p>
+    <hr style="border-color:#334155; margin: 0.8em auto; width: 40%;" />
+    <div class="cols3" style="margin-top:1em">
+      <div class="card" style="text-align:center">
+        <h4>⭐ Star</h4>
+        <p>github.com/enzomar/archipilot</p>
+      </div>
+      <div class="card" style="text-align:center">
+        <h4>📦 Install</h4>
+        <p>ext install<br/>enzomar.archipilot</p>
+      </div>
+      <div class="card" style="text-align:center">
+        <h4>🌐 Website</h4>
+        <p>enzomar.github.io/<br/>archipilot</p>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">End card. Hold for 5 seconds.</aside>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'slide',
+    backgroundTransition: 'fade',
+    progress: true,
+    controls: true,
+    center: false,
+    width: 1280,
+    height: 720,
+    margin: 0.03,
+    minScale: 0.5,
+    maxScale: 1.2,
+    plugins: [ RevealHighlight, RevealNotes ]
+  });
+</script>
+</body>
+</html>

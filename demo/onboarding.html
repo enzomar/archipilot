@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>archipilot — Interactive Onboarding</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/night.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css" />
+  <style>
+    /* ─── TOKENS ─────────────────────────────────────── */
+    :root {
+      --ap-yellow: #f5c518;
+      --ap-green:  #22c55e;
+      --ap-red:    #ef4444;
+      --ap-blue:   #60a5fa;
+      --ap-purple: #a78bfa;
+      --ap-orange: #fb923c;
+      --ap-gray:   #94a3b8;
+      --ap-bg:     #0f172a;
+      --ap-card:   #1e293b;
+      /* role colors */
+      --dev-color: #34d399;   /* emerald */
+      --arch-color:#818cf8;   /* indigo  */
+      --cur-color: #fbbf24;   /* amber   */
+    }
+
+    /* ─── BASE ───────────────────────────────────────── */
+    .reveal { font-family: 'Segoe UI', system-ui, sans-serif; }
+    .reveal h1, .reveal h2, .reveal h3 {
+      color: var(--ap-yellow); text-transform: none; letter-spacing: -0.02em;
+    }
+    .reveal h1 { font-size: 1.9em; }
+    .reveal h2 { font-size: 1.25em; border-bottom: 2px solid var(--ap-yellow);
+                 padding-bottom: 0.12em; margin-bottom: 0.4em; }
+    .reveal h3 { font-size: 0.95em; color: var(--ap-blue); margin: 0.3em 0 0.2em; }
+    .reveal .slides section {
+      text-align: left; overflow-y: auto;
+      max-height: 680px; box-sizing: border-box;
+    }
+    .reveal ul { margin-left: 0.9em; }
+    .reveal li  { margin: 0.22em 0; font-size: 0.8em; }
+    .reveal p   { font-size: 0.8em; margin: 0.25em 0; }
+    .reveal ol  { margin-left: 1.1em; }
+    .reveal ol li { font-size: 0.8em; margin: 0.25em 0; }
+    code { background: #1e293b; padding: 0.05em 0.35em; border-radius: 4px;
+           font-size: 0.88em; color: #7dd3fc; }
+
+    /* ─── COMMAND BLOCK ──────────────────────────────── */
+    .cmd-wrap { position: relative; margin: 0.3em 0; }
+    .cmd {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-left: 4px solid var(--ap-yellow);
+      border-radius: 6px;
+      padding: 0.4em 2.2em 0.4em 0.75em;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.78em; color: #e6edf3;
+      white-space: pre-wrap; line-height: 1.55;
+    }
+    .copy-btn {
+      position: absolute; top: 0.3em; right: 0.4em;
+      background: #334155; border: none; border-radius: 4px;
+      color: #94a3b8; font-size: 0.65em; padding: 0.2em 0.45em;
+      cursor: pointer; transition: background 0.15s, color 0.15s;
+    }
+    .copy-btn:hover { background: var(--ap-yellow); color: #000; }
+    .copy-btn.copied { background: #052e16; color: var(--ap-green); }
+
+    /* ─── TRY-IT BOX ─────────────────────────────────── */
+    .tryit {
+      background: #0a1628;
+      border: 1.5px dashed var(--ap-yellow);
+      border-radius: 8px;
+      padding: 0.45em 0.8em;
+      font-size: 0.77em;
+      color: #f5c518;
+      margin: 0.35em 0;
+    }
+    .tryit strong { color: #fff; }
+
+    /* ─── NARRATION ──────────────────────────────────── */
+    .narration {
+      background: var(--ap-card);
+      border-left: 4px solid var(--ap-green);
+      border-radius: 6px;
+      padding: 0.4em 0.75em;
+      font-style: italic; color: #cbd5e1; font-size: 0.76em;
+      margin: 0.3em 0;
+    }
+
+    /* ─── EXPECT ─────────────────────────────────────── */
+    .expect {
+      background: var(--ap-card);
+      border-left: 4px solid var(--ap-blue);
+      border-radius: 6px;
+      padding: 0.35em 0.75em;
+      font-size: 0.74em; color: #94a3b8;
+      margin: 0.3em 0;
+    }
+
+    /* ─── SNIPPET ─────────────────────────────────────── */
+    .snippet {
+      background: #0d1117;
+      border: 1px solid #1e3a5f;
+      border-radius: 6px;
+      padding: 0.35em 0.75em;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.68em; color: #7dd3fc;
+      white-space: pre-wrap; margin: 0.25em 0;
+    }
+
+    /* ─── LAYOUT ─────────────────────────────────────── */
+    .cols  { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8em; align-items: start; }
+    .cols3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6em; align-items: start; }
+
+    /* ─── CARD ───────────────────────────────────────── */
+    .card {
+      background: var(--ap-card); border: 1px solid #334155;
+      border-radius: 8px; padding: 0.55em 0.75em;
+    }
+    .card h4 { color: var(--ap-yellow); margin: 0 0 0.25em; font-size: 0.8em; }
+    .card p, .card li { font-size: 0.74em; color: #94a3b8; margin: 0.15em 0; }
+
+    /* ─── PILLS ──────────────────────────────────────── */
+    .pill {
+      display: inline-block; padding: 0.12em 0.55em; border-radius: 99px;
+      font-size: 0.7em; font-weight: 600; margin: 0 0.1em;
+    }
+    .pill-red    { background: #450a0a; color: var(--ap-red); }
+    .pill-yellow { background: #422006; color: #fbbf24; }
+    .pill-green  { background: #052e16; color: var(--ap-green); }
+    .pill-blue   { background: #172554; color: var(--ap-blue); }
+
+    /* ─── ROLE BADGE (shown on every track slide) ─────── */
+    .role-badge {
+      position: absolute; top: 0.9em; right: 1em;
+      font-size: 0.62em; font-weight: 700; padding: 0.2em 0.6em;
+      border-radius: 4px; text-transform: uppercase; letter-spacing: 0.07em;
+    }
+    .badge-dev  { background: #022c22; color: var(--dev-color);  border: 1px solid var(--dev-color); }
+    .badge-arch { background: #1e1b4b; color: var(--arch-color); border: 1px solid var(--arch-color); }
+    .badge-cur  { background: #422006; color: var(--cur-color);  border: 1px solid var(--cur-color); }
+
+    /* ─── STEP COUNTER ───────────────────────────────── */
+    .step-counter {
+      display: inline-flex; align-items: center; gap: 0.35em;
+      margin-bottom: 0.3em;
+    }
+    .step-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #334155; border: 1.5px solid #475569;
+    }
+    .step-dot.active { background: var(--ap-yellow); border-color: var(--ap-yellow); }
+    .step-dot.done   { background: var(--ap-green);  border-color: var(--ap-green); }
+
+    /* ─── TITLE SLIDE ────────────────────────────────── */
+    .title-slide { text-align: center; }
+    .title-slide h1 { font-size: 2.2em; margin-bottom: 0.1em; }
+    .title-slide .sub { color: var(--ap-gray); font-size: 0.88em; }
+
+    /* ─── ROLE CARDS (picker slide) ─────────────────── */
+    .role-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1em; margin-top: 0.8em; }
+    .role-card {
+      background: var(--ap-card); border: 2px solid #334155;
+      border-radius: 12px; padding: 1em 0.9em;
+      cursor: pointer; text-align: center;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+    .role-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px #00000060; }
+    .role-card.dev  { border-color: var(--dev-color); }
+    .role-card.arch { border-color: var(--arch-color); }
+    .role-card.cur  { border-color: var(--cur-color); }
+    .role-card .icon { font-size: 2.2em; display: block; margin-bottom: 0.3em; }
+    .role-card h3   { margin: 0 0 0.3em; font-size: 0.95em; }
+    .role-card.dev  h3 { color: var(--dev-color);  }
+    .role-card.arch h3 { color: var(--arch-color); }
+    .role-card.cur  h3 { color: var(--cur-color);  }
+    .role-card p    { font-size: 0.72em; color: #64748b; margin: 0; }
+
+    .role-card .duration {
+      display: inline-block; margin-top: 0.55em;
+      font-size: 0.65em; color: var(--ap-gray);
+      background: #0f172a; border-radius: 4px; padding: 0.15em 0.5em;
+    }
+
+    /* ─── LEARN BOX ──────────────────────────────────── */
+    .learn-box {
+      background: #052e16; border: 1px solid var(--ap-green);
+      border-radius: 8px; padding: 0.5em 0.8em; margin: 0.4em 0;
+    }
+    .learn-box h4 { color: var(--ap-green); font-size: 0.8em; margin: 0 0 0.3em; }
+    .learn-box li { font-size: 0.74em; color: #86efac; margin: 0.18em 0; }
+
+    /* ─── SCENARIO BOX ───────────────────────────────── */
+    .scenario {
+      background: #1e293b; border-left: 4px solid var(--ap-orange);
+      border-radius: 6px; padding: 0.5em 0.8em; margin: 0.4em 0;
+      font-size: 0.8em; color: #e2e8f0;
+    }
+    .scenario strong { color: var(--ap-orange); }
+
+    /* ─── DIFF PREVIEW ───────────────────────────────── */
+    .diff-add { color: var(--ap-green); font-size: 0.75em; font-family: monospace; }
+    .diff-rem { color: var(--ap-red);   font-size: 0.75em; font-family: monospace; }
+
+    /* ─── APPLY BTN MOCK ─────────────────────────────── */
+    .apply-btn {
+      display: inline-block; background: #052e16;
+      color: var(--ap-green); border: 1px solid var(--ap-green);
+      border-radius: 4px; padding: 0.2em 0.65em; font-size: 0.72em;
+      font-weight: 600; margin: 0.3em 0;
+    }
+
+    /* ─── CONGRATS BOX ───────────────────────────────── */
+    .congrats {
+      background: #1e293b; border: 2px solid var(--ap-yellow);
+      border-radius: 10px; padding: 0.6em 1em; text-align: center; margin: 0.5em 0;
+    }
+    .congrats .big { font-size: 1.6em; }
+    .congrats p { color: #e2e8f0; font-size: 0.82em; }
+
+    /* ─── CTA LINKS ──────────────────────────────────── */
+    .cta-link {
+      display: inline-block;
+      background: var(--ap-yellow); color: #000;
+      border-radius: 6px; padding: 0.4em 0.9em;
+      font-weight: 700; font-size: 0.8em; text-decoration: none;
+      margin: 0.3em 0.2em;
+    }
+    .cta-link.ghost {
+      background: transparent; color: var(--ap-yellow);
+      border: 1.5px solid var(--ap-yellow);
+    }
+
+    /* ─── TABLE ──────────────────────────────────────── */
+    .reveal table { width: 100%; font-size: 0.75em; border-collapse: collapse; }
+    .reveal table th { background: #1e293b; color: var(--ap-yellow); padding: 0.35em 0.55em; }
+    .reveal table td { padding: 0.3em 0.55em; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+
+    /* ─── NAV HINT ───────────────────────────────────── */
+    .nav-hint {
+      text-align: center; color: #475569; font-size: 0.65em; margin-top: 0.5em;
+    }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SLIDE 0 — WELCOME
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section data-background-color="#0f172a">
+  <div class="title-slide">
+    <div style="font-size:2.4em; margin-bottom:0.15em;">🧭</div>
+    <h1>archipilot</h1>
+    <p class="sub">Enterprise Architecture Copilot · inside VS Code</p>
+    <hr style="border-color:#334155; margin: 0.8em auto; width: 40%;" />
+    <p style="color: var(--ap-blue); font-size: 0.9em; font-weight: 600;">
+      Interactive Onboarding — Hands-On
+    </p>
+    <p style="color:#64748b; font-size: 0.72em; margin-top: 0.3em;">
+      Pick your role on the next slide · follow the steps · try every command live in VS Code
+    </p>
+    <p style="margin-top: 1em;">
+      <span style="font-size:0.72em; color:#334155; background:#0d1117; padding:0.2em 0.7em; border-radius:4px; font-family:monospace;">
+        ext install enzomar.archipilot
+      </span>
+    </p>
+    <p class="nav-hint" style="margin-top:0.8em">→ press Space or → to continue</p>
+  </div>
+  <aside class="notes">Welcome slide. This is a self-guided onboarding — the user will pick a role next and follow live hands-on steps.</aside>
+</section>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SLIDE 1 — ROLE PICKER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section data-background-color="#0f172a">
+  <h2>Who are you today?</h2>
+  <p style="color:#64748b">Click your role — you'll jump straight into a hands-on scenario tailored for you.</p>
+  <div class="role-cards">
+
+    <div class="role-card dev" onclick="goTo(2,0)">
+      <span class="icon">💻</span>
+      <h3>Developer</h3>
+      <p>You build software and need to document the architecture — fast, without leaving VS Code.</p>
+      <span class="duration">⏱ ~6 steps · 10 min</span>
+    </div>
+
+    <div class="role-card arch" onclick="goTo(3,0)">
+      <span class="icon">🗺️</span>
+      <h3>Architect</h3>
+      <p>You manage a live EA programme — decisions, risks, impact analysis, governance.</p>
+      <span class="duration">⏱ ~6 steps · 10 min</span>
+    </div>
+
+    <div class="role-card cur" onclick="goTo(4,0)">
+      <span class="icon">🔭</span>
+      <h3>Curious</h3>
+      <p>You want to explore what archipilot can do. No existing project needed — start from zero.</p>
+      <span class="duration">⏱ ~7 steps · 12 min</span>
+    </div>
+
+  </div>
+  <p class="nav-hint" style="margin-top:0.8em">You can also use ↓ to step through a track manually after clicking a role</p>
+  <aside class="notes">Role picker. Clicking a card calls goTo(h,v) via JS to jump to the matching horizontal section.</aside>
+</section>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ██████████  DEVELOPER TRACK  (section h=2)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section data-background-color="#0f172a">
+
+  <!-- DEV 0 — Intro -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-dev">💻 Developer Track</span>
+    <h2>Your Scenario</h2>
+    <div class="scenario">
+      <strong>ShopEngine</strong> — you just finished building a microservice backend for a new e-commerce platform.
+      Your manager asks: <em>"Can you share the architecture docs for the sprint review?"</em>
+      <br/>You have 30 minutes and no Confluence page yet.
+    </div>
+    <div class="cols" style="margin-top:0.6em">
+      <div class="card">
+        <h4>🎯 Goal</h4>
+        <p>Go from zero documentation to a structured, version-controlled architecture with diagrams and decisions — all from inside VS Code.</p>
+      </div>
+      <div class="card">
+        <h4>🛠 What you'll use</h4>
+        <ul>
+          <li><code>/new</code> — scaffold the vault</li>
+          <li><code>/diagram</code> — auto-generate a context diagram</li>
+          <li><code>/c4</code> — generate a C4 model</li>
+          <li><code>/adr</code> — record a design decision</li>
+          <li><code>/status</code> — check completeness</li>
+        </ul>
+      </div>
+    </div>
+    <p class="nav-hint">↓ Step 1 of 6</p>
+    <aside class="notes">Developer intro. Set the scene clearly before starting.</aside>
+  </section>
+
+  <!-- DEV 1 — /new -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-dev">💻 Developer · Step 1 / 6</span>
+    <div class="step-counter">
+      <div class="step-dot active"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <h2>Scaffold Your Architecture Vault</h2>
+    <div class="tryit">
+      <strong>Open VS Code in an empty folder, then in Copilot Chat type:</strong>
+    </div>
+    <div class="cmd-wrap">
+      <div class="cmd" id="dev-cmd-1">@architect /new ShopEngine-Architecture</div>
+      <button class="copy-btn" onclick="copyCmd('dev-cmd-1',this)">copy</button>
+    </div>
+    <div class="expect">
+      <strong style="color:var(--ap-blue)">What happens:</strong>
+      <ul>
+        <li>27 TOGAF-aligned Markdown files appear in Explorer</li>
+        <li><code>00_Architecture_Repository.md</code> opens — your master index</li>
+        <li>archipilot suggests opening <code>A1_Architecture_Vision.md</code> first</li>
+      </ul>
+    </div>
+    <div class="narration">
+      💡 These are just Markdown files in your repo. Git-tracked, no special format, no lock-in.
+    </div>
+    <p class="nav-hint">↓ Step 2</p>
+    <aside class="notes">First live command. Encourage the user to actually run it before pressing next.</aside>
+  </section>
+
+  <!-- DEV 2 — Fill C1 -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-dev">💻 Developer · Step 2 / 6</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot active"></div>
+      <div class="step-dot"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <h2>Describe Your System</h2>
+    <p>Open <code>C1_Application_Architecture.md</code> and paste this — replace with your own services:</p>
+    <div class="snippet">## Target State
+- **API Gateway** (AWS API Gateway) — entry point for all external traffic
+- **Auth Service** (Node.js + Cognito) — OAuth2 / JWT
+- **Product Catalogue** (Node.js) → DynamoDB
+- **Order Management** (Java / Spring Boot) → Aurora PostgreSQL
+- **Notification Service** (Python) → SES + SNS
+- **Event Bus** (Kafka MSK) — async decoupling
+- **Frontend** (Next.js) → CloudFront + S3
+
+## Dependencies
+- [[D1_Technology_Architecture]]
+- [[X1_ADR_Decision_Log]]</div>
+    <div class="narration">
+      💡 The <code>[[WikiLink]]</code> syntax creates the knowledge graph archipilot uses for impact analysis.
+    </div>
+    <p class="nav-hint">↓ Step 3</p>
+    <aside class="notes">Filling in C1 with real service names. The WikiLinks are important — explain why.</aside>
+  </section>
+
+  <!-- DEV 3 — /diagram -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-dev">💻 Developer · Step 3 / 6</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot active"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <h2>Generate a Context Diagram</h2>
+    <div class="tryit">
+      <strong>With C1 open, run:</strong>
+    </div>
+    <div class="cmd-wrap">
+      <div class="cmd" id="dev-cmd-3">@architect /diagram</div>
+      <button class="copy-btn" onclick="copyCmd('dev-cmd-3',this)">copy</button>
+    </div>
+    <div class="expect">
+      <strong style="color:var(--ap-blue)">Expected:</strong>
+      Mermaid <code>flowchart LR</code> inserted under a new <code>## Context Diagram</code> section — auto-generated from the services you listed above.
+    </div>
+    <div class="tryit" style="margin-top:0.5em; border-color: var(--ap-purple)">
+      <strong>Want a C4 model instead?</strong> Run:
+    </div>
+    <div class="cmd-wrap">
+      <div class="cmd" id="dev-cmd-3b">@architect /c4</div>
+      <button class="copy-btn" onclick="copyCmd('dev-cmd-3b',this)">copy</button>
+    </div>
+    <div class="expect">
+      C4 Context diagram — shows ShopEngine, customers, and all external systems (Cognito, Kafka, CloudFront) in standard C4 notation.
+    </div>
+    <p class="nav-hint">↓ Step 4</p>
+    <aside class="notes">No diagramming tool needed. Shows Mermaid preview if the Mermaid extension is installed.</aside>
+  </section>
+
+  <!-- DEV 4 — /adr -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-dev">💻 Developer · Step 4 / 6</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot done"></div><div class="step-dot active"></div>
+      <div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <h2>Record a Design Decision</h2>
+    <p>You chose Redis for session caching. Let's document it properly:</p>
+    <div class="cmd-wrap">
+      <div class="cmd" id="dev-cmd-4">@architect /adr Adopt Redis (ElastiCache) for session caching
+— stateless API tier requires shared session store;
+Redis gives sub-ms latency at horizontal scale</div>
+      <button class="copy-btn" onclick="copyCmd('dev-cmd-4',this)">copy</button>
+    </div>
+    <div class="expect">
+      <strong style="color:var(--ap-blue)">Expected:</strong>
+      <ul>
+        <li>Diff preview opens — new entry appended to <code>X1_ADR_Decision_Log.md</code></li>
+        <li>AD-01 · Status: <span class="pill pill-yellow">🟡 Proposed</span> · Date: today</li>
+        <li>Context, decision, consequences sections pre-filled</li>
+      </ul>
+    </div>
+    <div class="apply-btn">👆 Click Apply All in the diff preview</div>
+    <div class="narration">
+      💡 Every decision is traceable. Future architects (or you in 6 months) will know exactly why each choice was made.
+    </div>
+    <p class="nav-hint">↓ Step 5</p>
+    <aside class="notes">ADR — Architecture Decision Record. Explain the value of the diff preview safety mechanism.</aside>
+  </section>
+
+  <!-- DEV 5 — /status -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-dev">💻 Developer · Step 5 / 6</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot active"></div><div class="step-dot"></div>
+    </div>
+    <h2>Check What's Still Missing</h2>
+    <div class="cmd-wrap">
+      <div class="cmd" id="dev-cmd-5">@architect /status</div>
+      <button class="copy-btn" onclick="copyCmd('dev-cmd-5',this)">copy</button>
+    </div>
+    <div class="expect">
+      <strong style="color:var(--ap-blue)">Expected output:</strong>
+      <ul>
+        <li>C1: <span class="pill pill-yellow">Draft</span> — diagram added ✅</li>
+        <li>D1: <span class="pill pill-red">Empty</span> — technology stack not documented</li>
+        <li>A1: <span class="pill pill-red">Empty</span> — no architecture vision written</li>
+        <li>1 ADR recorded ✅ · 0 risks documented ⚠️</li>
+      </ul>
+    </div>
+    <div class="tryit">
+      <strong>Try this:</strong> Run <code>@architect /todo</code> to get a prioritised list of exactly what to fill next.
+    </div>
+    <div class="cmd-wrap" style="margin-top:0.2em">
+      <div class="cmd" id="dev-cmd-5b">@architect /todo</div>
+      <button class="copy-btn" onclick="copyCmd('dev-cmd-5b',this)">copy</button>
+    </div>
+    <p class="nav-hint">↓ Wrap up</p>
+    <aside class="notes">Status check shows gaps. /todo gives a prioritised action list. This is how developers iterate on architecture docs between sprints.</aside>
+  </section>
+
+  <!-- DEV 6 — Wrap -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-dev">💻 Developer Track</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot done"></div><div class="step-dot active"></div>
+    </div>
+    <h2>What You Just Did</h2>
+    <div class="congrats">
+      <div class="big">🎉</div>
+      <p>In under 10 minutes you went from zero docs to a versioned architecture vault, a context diagram, and your first ADR.</p>
+    </div>
+    <div class="learn-box">
+      <h4>✅ You learned</h4>
+      <ul>
+        <li><code>/new</code> — scaffold a TOGAF-aligned vault in one command</li>
+        <li><code>/diagram</code> and <code>/c4</code> — generate diagrams from prose</li>
+        <li><code>/adr</code> — record design decisions with governance</li>
+        <li><code>/status</code> and <code>/todo</code> — know what's missing, what's next</li>
+      </ul>
+    </div>
+    <p style="margin-top:0.6em">
+      <strong style="color: var(--ap-yellow)">Next to explore:</strong>
+      <code>/archimate</code> to export to Archi, BiZZdesign or Sparx EA ·
+      <code>/drawio</code> for stakeholder diagrams ·
+      <code>/analyze</code> for impact analysis
+    </p>
+    <div style="margin-top:0.7em; text-align:center">
+      <a class="cta-link" href="https://enzomar.github.io/archipilot/" target="_blank">🌐 Documentation</a>
+      <a class="cta-link ghost" href="https://github.com/enzomar/archipilot" target="_blank">⭐ Star on GitHub</a>
+    </div>
+    <aside class="notes">Wrap-up. Encourage them to go deeper with /archimate next.</aside>
+  </section>
+
+</section><!-- end DEV track -->
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ██████████  ARCHITECT TRACK  (section h=3)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section data-background-color="#0f172a">
+
+  <!-- ARCH 0 — Intro -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-arch">🗺️ Architect Track</span>
+    <h2>Your Scenario</h2>
+    <div class="scenario">
+      <strong>HealthConnect</strong> — you've just joined a mid-flight project. Architecture decisions are buried in email threads. Risks are in someone's head. Three work packages are blocked. Your first stand-up is in 2 hours.
+    </div>
+    <div class="cols" style="margin-top:0.6em">
+      <div class="card">
+        <h4>🎯 Goal</h4>
+        <p>Get full situational awareness, surface the critical blockers, resolve an open decision, and record the outcome — with governance — before the stand-up.</p>
+      </div>
+      <div class="card">
+        <h4>🛠 What you'll use</h4>
+        <ul>
+          <li><code>/status</code> — instant health dashboard</li>
+          <li><code>/todo</code> — prioritised action list</li>
+          <li><code>/decide</code> — vault-grounded analysis</li>
+          <li><code>/adr</code> — record the decision</li>
+          <li><code>/analyze</code> — impact analysis</li>
+          <li><code>/update</code> — update risk / doc</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tryit">
+      <strong>Before you start:</strong> copy <code>demo/sample-vault/</code> to a local folder and open it in VS Code — this gives you a realistic pre-populated vault to work from.
+    </div>
+    <p class="nav-hint">↓ Step 1 of 6</p>
+    <aside class="notes">Architect track. The sample vault gives context. If they don't have it, they can run /new and fill it minimally.</aside>
+  </section>
+
+  <!-- ARCH 1 — /status -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-arch">🗺️ Architect · Step 1 / 6</span>
+    <div class="step-counter">
+      <div class="step-dot active"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <h2>Monday Morning Dashboard</h2>
+    <div class="tryit"><strong>Run this first — every morning:</strong></div>
+    <div class="cmd-wrap">
+      <div class="cmd" id="arch-cmd-1">@architect /status</div>
+      <button class="copy-btn" onclick="copyCmd('arch-cmd-1',this)">copy</button>
+    </div>
+    <div class="expect">
+      <strong style="color:var(--ap-blue)">Expected — instant situational awareness:</strong>
+      <ul>
+        <li>Document completeness by TOGAF phase (Vision ✅  Business ⚠️  Tech ❌)</li>
+        <li>3 open ADRs — 2 blocking work packages</li>
+        <li>5 risks — 2 <span class="pill pill-red">High</span> unmitigated</li>
+        <li>4 open questions without owners</li>
+        <li>Sprint velocity estimate vs architecture gate readiness</li>
+      </ul>
+    </div>
+    <div class="narration">
+      💡 This replaces the 30-minute "what's the status?" email chain. Everything in the vault, summarised in seconds.
+    </div>
+    <p class="nav-hint">↓ Step 2</p>
+    <aside class="notes">Status is the Monday ritual. Everything the architect needs to start their day.</aside>
+  </section>
+
+  <!-- ARCH 2 — /todo -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-arch">🗺️ Architect · Step 2 / 6</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot active"></div>
+      <div class="step-dot"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <h2>What's the Highest Priority?</h2>
+    <div class="cmd-wrap">
+      <div class="cmd" id="arch-cmd-2">@architect /todo</div>
+      <button class="copy-btn" onclick="copyCmd('arch-cmd-2',this)">copy</button>
+    </div>
+    <div class="expect">
+      <strong style="color:var(--ap-blue)">Expected — cross-vault priority list:</strong>
+      <ul>
+        <li><span class="pill pill-red">BLOCKER</span> AD-01 API Gateway — open, blocking 3 delivery tasks</li>
+        <li><span class="pill pill-red">HIGH</span> Risk R-03 PCI-DSS gap — mitigation not started</li>
+        <li><span class="pill pill-yellow">MED</span> AD-02 Message Bus — open, overdue</li>
+        <li><span class="pill pill-yellow">MED</span> Q-04 Multi-cloud strategy — no owner</li>
+        <li><span class="pill pill-green">LOW</span> D1 Technology Architecture — draft, needs review</li>
+      </ul>
+    </div>
+    <div class="narration">
+      💡 archipilot traces across <em>all</em> vault files to find blockers — decisions, risks, open questions, and requirement gaps — sorted by business impact.
+    </div>
+    <p class="nav-hint">↓ Step 3 — resolve the top blocker</p>
+    <aside class="notes">The cross-file reasoning is the key value here. archipilot finds blockers that span multiple documents.</aside>
+  </section>
+
+  <!-- ARCH 3 — /decide -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-arch">🗺️ Architect · Step 3 / 6</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot active"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <h2>Resolve the Blocker — Decision Analysis</h2>
+    <div class="cmd-wrap">
+      <div class="cmd" id="arch-cmd-3">@architect /decide AD-01 — evaluate Kong, AWS API Gateway,
+and Azure APIM as the API gateway for HealthConnect
+given PCI-DSS requirements, multi-cloud strategy Q-04,
+and the team's limited infra ops capacity</div>
+      <button class="copy-btn" onclick="copyCmd('arch-cmd-3',this)">copy</button>
+    </div>
+    <div class="expect">
+      <strong style="color:var(--ap-blue)">Expected — vault-grounded analysis:</strong>
+      <ul>
+        <li>Context pulled from vault: PCI-DSS risk, team skills, multi-cloud question</li>
+        <li>Pros / cons matrix across all 3 options</li>
+        <li>Weighted recommendation with rationale</li>
+        <li>Suggested follow-up: <code>/adr</code> to record the decision</li>
+      </ul>
+    </div>
+    <div class="narration">
+      💡 The analysis references <em>your actual vault content</em> — not generic internet knowledge. The PCI-DSS risk, your team profile, your constraints. This is architecture intelligence, not a Google search.
+    </div>
+    <p class="nav-hint">↓ Step 4 — record the decision</p>
+    <aside class="notes">Vault-grounded analysis is the key differentiator. Emphasise it replaces hours of analysis with seconds.</aside>
+  </section>
+
+  <!-- ARCH 4 — /adr -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-arch">🗺️ Architect · Step 4 / 6</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot done"></div><div class="step-dot active"></div>
+      <div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <h2>Record the Decision — Governed</h2>
+    <div class="cmd-wrap">
+      <div class="cmd" id="arch-cmd-4">@architect /adr Adopt AWS API Gateway as the API entry point
+for HealthConnect — managed, PCI-DSS ready, no infra
+ops overhead. Revisit at Phase 3 if multi-cloud needed.</div>
+      <button class="copy-btn" onclick="copyCmd('arch-cmd-4',this)">copy</button>
+    </div>
+    <div class="cols" style="margin-top:0.3em">
+      <div class="expect">
+        <strong style="color:var(--ap-blue)">Diff preview shows:</strong>
+        <div class="diff-add">+ AD-01 · AWS API Gateway · ✅ Decided</div>
+        <div class="diff-add">+ Date: today · Owner: [you]</div>
+        <div class="diff-add">+ Context, rationale, consequences sections</div>
+      </div>
+      <div>
+        <div class="apply-btn">👆 Click Apply All</div>
+        <div class="narration" style="margin-top:0.4em">
+          💡 Automatic timestamped backup created before every write. Nothing is lost.
+        </div>
+      </div>
+    </div>
+    <p class="nav-hint">↓ Step 5 — impact analysis</p>
+    <aside class="notes">Show the diff — safety first. The backup path is .archipilot/backups. Mention it for governance credibility.</aside>
+  </section>
+
+  <!-- ARCH 5 — /analyze -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-arch">🗺️ Architect · Step 5 / 6</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot active"></div><div class="step-dot"></div>
+    </div>
+    <h2>Impact Analysis — Before You Change Anything</h2>
+    <div class="cmd-wrap">
+      <div class="cmd" id="arch-cmd-5">@architect /analyze What is the impact of migrating
+HealthConnect from VPN-based remote access to a
+zero-trust network architecture?</div>
+      <button class="copy-btn" onclick="copyCmd('arch-cmd-5',this)">copy</button>
+    </div>
+    <div class="expect">
+      <strong style="color:var(--ap-blue)">Expected — full traceability sweep:</strong>
+      <ul>
+        <li>Affected components: Auth Service, API Gateway, Remote Worker Portal</li>
+        <li>Requirements touched: NFR-03 (security), NFR-07 (availability)</li>
+        <li>Risks triggered: R-02 (identity continuity), R-03 (PCI-DSS scope shift)</li>
+        <li>ADRs that need review: AD-01 (newly decided)</li>
+        <li>Recommended actions: update D1, raise new risk, notify compliance</li>
+      </ul>
+    </div>
+    <div class="narration">
+      💡 Read-only command — nothing is written. Run it any time to understand downstream effects before committing to a change.
+    </div>
+    <p class="nav-hint">↓ Wrap up</p>
+    <aside class="notes">Impact analysis is safe to run at any time. Great for change advisory board preparation.</aside>
+  </section>
+
+  <!-- ARCH 6 — Wrap -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-arch">🗺️ Architect Track</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot done"></div><div class="step-dot active"></div>
+    </div>
+    <h2>What You Just Did</h2>
+    <div class="congrats">
+      <div class="big">🏛️</div>
+      <p>Hour 1 on an inherited project → full situational awareness, one critical blocker resolved, decision documented, impact assessed.</p>
+    </div>
+    <div class="learn-box">
+      <h4>✅ You learned</h4>
+      <ul>
+        <li><code>/status</code> — Monday morning EA dashboard</li>
+        <li><code>/todo</code> — prioritised cross-vault action list</li>
+        <li><code>/decide</code> — vault-grounded decision analysis</li>
+        <li><code>/adr</code> — governed decision recording with diff + backup</li>
+        <li><code>/analyze</code> — impact analysis before making changes</li>
+      </ul>
+    </div>
+    <p style="margin-top:0.5em">
+      <strong style="color: var(--ap-yellow)">Next to explore:</strong>
+      <code>/archimate</code> — export your vault to Archi or BiZZdesign ·
+      <code>/drawio</code> — prepare stakeholder slides ·
+      <code>/update</code> — governed document updates
+    </p>
+    <div style="margin-top:0.6em; text-align:center">
+      <a class="cta-link" href="https://enzomar.github.io/archipilot/" target="_blank">🌐 Documentation</a>
+      <a class="cta-link ghost" href="https://github.com/enzomar/archipilot" target="_blank">⭐ Star on GitHub</a>
+    </div>
+    <aside class="notes">Architect wrap-up. Push them to /archimate as the natural next step.</aside>
+  </section>
+
+</section><!-- end ARCH track -->
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ██████████  CURIOUS TRACK  (section h=4)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section data-background-color="#0f172a">
+
+  <!-- CUR 0 — Intro -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-cur">🔭 Curious Track</span>
+    <h2>Your Scenario</h2>
+    <div class="scenario">
+      You've heard of TOGAF, ArchiMate, EA tools. You're not sure if this is for you. <strong>No existing project needed.</strong> Follow the steps and you'll have a full architecture model — with diagrams and ArchiMate export — in under 12 minutes.
+    </div>
+    <div class="cols" style="margin-top:0.5em">
+      <div class="card">
+        <h4>🎯 Goal</h4>
+        <p>Go from zero to a complete architecture vault with AI-generated diagrams and a standards-compliant ArchiMate model — so you can judge for yourself if archipilot fits your workflow.</p>
+      </div>
+      <div class="card">
+        <h4>🛠 Full tour</h4>
+        <ul>
+          <li><code>/new</code> — scaffold</li>
+          <li><code>/decide</code> — AI analysis</li>
+          <li><code>/diagram</code> + <code>/c4</code> — diagrams</li>
+          <li><code>/status</code> + <code>/todo</code> — health</li>
+          <li><code>/archimate</code> — enterprise export</li>
+          <li><code>/drawio</code> — stakeholder diagrams</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tryit">
+      <strong>Before you start:</strong> Open VS Code · open Copilot Chat (<code>Cmd+Shift+I</code>) · create an empty folder.
+    </div>
+    <p class="nav-hint">↓ Step 1 of 7</p>
+    <aside class="notes">Curious track — broadest demo. User has no prior context. Walk them through everything gently.</aside>
+  </section>
+
+  <!-- CUR 1 — /new -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-cur">🔭 Curious · Step 1 / 7</span>
+    <div class="step-counter">
+      <div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <h2>Create a Project From Nothing</h2>
+    <div class="tryit">
+      <strong>In Copilot Chat, type exactly this — use any project name you like:</strong>
+    </div>
+    <div class="cmd-wrap">
+      <div class="cmd" id="cur-cmd-1">@architect /new MyFirst-Architecture</div>
+      <button class="copy-btn" onclick="copyCmd('cur-cmd-1',this)">copy</button>
+    </div>
+    <div class="expect">
+      <strong style="color:var(--ap-blue)">Watch:</strong>
+      <ul>
+        <li>27 files appear in Explorer — a complete TOGAF-aligned vault</li>
+        <li>Every phase: Vision → Business → Applications → Technology → Roadmap</li>
+        <li>Plus: ADR log, Risk register, Open questions, Architecture principles</li>
+      </ul>
+    </div>
+    <div class="narration">
+      💡 These are just Markdown files. You can edit them in VS Code, commit to Git, and read them in any editor. No proprietary format.
+    </div>
+    <p class="nav-hint">↓ Step 2 — add some content</p>
+    <aside class="notes">The 27-file scaffold is the first wow moment. Let them scroll through Explorer before continuing.</aside>
+  </section>
+
+  <!-- CUR 2 — Fill basics -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-cur">🔭 Curious · Step 2 / 7</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <h2>Give archipilot Something to Work With</h2>
+    <p>Open <code>A1_Architecture_Vision.md</code> and add a few lines — use a project you're familiar with:</p>
+    <div class="snippet">## Project: [Your project name]
+
+## Business Drivers
+- BD-01: [Why does this system exist?]
+- BD-02: [What business problem does it solve?]
+- BD-03: [What would happen if we didn't build it?]
+
+## Target State
+[In 1-2 sentences: what does the system look like when it's done?]
+
+## Constraints
+- CON-01: [Any budget, technology, or regulatory constraints?]</div>
+    <div class="narration">
+      💡 Even 3 bullet points are enough for archipilot to start reasoning. You don't need a perfect document — start rough.
+    </div>
+    <p class="nav-hint">↓ Step 3 — ask archipilot a question</p>
+    <aside class="notes">Lower the bar — 3 bullet points is enough. This removes the blank-page paralysis.</aside>
+  </section>
+
+  <!-- CUR 3 — Freeform + /decide -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-cur">🔭 Curious · Step 3 / 7</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot active"></div>
+      <div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <h2>Ask an Architecture Question</h2>
+    <p>archipilot understands plain English. Try any of these — or ask your own question:</p>
+    <div class="cmd-wrap">
+      <div class="cmd" id="cur-cmd-3a">@architect What are the riskiest architectural decisions
+I haven't made yet?</div>
+      <button class="copy-btn" onclick="copyCmd('cur-cmd-3a',this)">copy</button>
+    </div>
+    <div class="cmd-wrap" style="margin-top:0.4em">
+      <div class="cmd" id="cur-cmd-3b">@architect /decide Should I use a monolith or microservices
+for a team of 5 developers building a B2C platform?</div>
+      <button class="copy-btn" onclick="copyCmd('cur-cmd-3b',this)">copy</button>
+    </div>
+    <div class="cmd-wrap" style="margin-top:0.4em">
+      <div class="cmd" id="cur-cmd-3c">@architect What TOGAF phases am I missing coverage for?</div>
+      <button class="copy-btn" onclick="copyCmd('cur-cmd-3c',this)">copy</button>
+    </div>
+    <div class="narration">
+      💡 archipilot reads <em>your vault</em> before answering — so the analysis is grounded in your actual context, not generic internet knowledge.
+    </div>
+    <p class="nav-hint">↓ Step 4 — generate diagrams</p>
+    <aside class="notes">Freeform question is the most magical moment for curious users. No command syntax needed — just ask.</aside>
+  </section>
+
+  <!-- CUR 4 — /diagram + /c4 -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-cur">🔭 Curious · Step 4 / 7</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <h2>Generate Diagrams Automatically</h2>
+    <div class="cols">
+      <div>
+        <h3>Context diagram from prose</h3>
+        <div class="cmd-wrap">
+          <div class="cmd" id="cur-cmd-4a">@architect /diagram</div>
+          <button class="copy-btn" onclick="copyCmd('cur-cmd-4a',this)">copy</button>
+        </div>
+        <div class="expect">
+          Mermaid <code>flowchart LR</code> — auto-generated from the components and dependencies you've listed in your vault.
+        </div>
+      </div>
+      <div>
+        <h3>C4 model</h3>
+        <div class="cmd-wrap">
+          <div class="cmd" id="cur-cmd-4b">@architect /c4</div>
+          <button class="copy-btn" onclick="copyCmd('cur-cmd-4b',this)">copy</button>
+        </div>
+        <div class="expect">
+          C4 Context + Container diagrams in Mermaid — the standard notation used by thousands of architecture teams globally.
+        </div>
+      </div>
+    </div>
+    <div class="narration" style="margin-top:0.4em">
+      💡 No draw.io, no Visio, no special syntax. Diagrams live in your Markdown files — they render in GitHub, Obsidian, VS Code with the Mermaid extension.
+    </div>
+    <p class="nav-hint">↓ Step 5 — check vault health</p>
+    <aside class="notes">Diagrams from prose is impressive. Encourage them to install the Mermaid VS Code extension to see the preview live.</aside>
+  </section>
+
+  <!-- CUR 5 — /status + /todo -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-cur">🔭 Curious · Step 5 / 7</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <h2>Check What's Missing</h2>
+    <div class="cols">
+      <div>
+        <h3>Health dashboard</h3>
+        <div class="cmd-wrap">
+          <div class="cmd" id="cur-cmd-5a">@architect /status</div>
+          <button class="copy-btn" onclick="copyCmd('cur-cmd-5a',this)">copy</button>
+        </div>
+        <div class="expect">
+          Document completeness per TOGAF phase · open decisions · unmitigated risks · missing owners
+        </div>
+      </div>
+      <div>
+        <h3>Prioritised next steps</h3>
+        <div class="cmd-wrap">
+          <div class="cmd" id="cur-cmd-5b">@architect /todo</div>
+          <button class="copy-btn" onclick="copyCmd('cur-cmd-5b',this)">copy</button>
+        </div>
+        <div class="expect">
+          Ranked action list — what's blocking, what's overdue, what's low risk to defer
+        </div>
+      </div>
+    </div>
+    <div class="narration" style="margin-top:0.4em">
+      💡 <code>/status</code> and <code>/todo</code> can be run any time — they're read-only and never modify your vault.
+    </div>
+    <p class="nav-hint">↓ Step 6 — export to ArchiMate</p>
+    <aside class="notes">Read-only commands — safe to run repeatedly. Great for weekly check-ins.</aside>
+  </section>
+
+  <!-- CUR 6 — /archimate -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-cur">🔭 Curious · Step 6 / 7</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div>
+    </div>
+    <h2>Export to Enterprise Tools ⭐</h2>
+    <div class="cmd-wrap">
+      <div class="cmd" id="cur-cmd-6">@architect /archimate</div>
+      <button class="copy-btn" onclick="copyCmd('cur-cmd-6',this)">copy</button>
+    </div>
+    <div class="cols" style="margin-top:0.3em">
+      <div class="expect">
+        <strong style="color:var(--ap-blue)">Expected:</strong>
+        <ul>
+          <li>Scans all vault files</li>
+          <li>Maps elements to ArchiMate 3.2 layers</li>
+          <li>Exports <code>exports/archimate/[name].xml</code></li>
+          <li>Open Exchange format — import into any tool</li>
+        </ul>
+      </div>
+      <div>
+        <div class="card">
+          <h4>Compatible tools</h4>
+          <ul>
+            <li><strong>Archi</strong> — free, open source</li>
+            <li>BiZZdesign Horizzon</li>
+            <li>Sparx Enterprise Architect</li>
+            <li>ADOIT · BOC</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="tryit" style="margin-top:0.4em">
+      <strong>Bonus:</strong> If you have Archi installed — File → Import → Open Exchange File → select the XML. You'll see your full model in a layered ArchiMate view.
+    </div>
+    <p class="nav-hint">↓ Step 7 — Draw.io bonus</p>
+    <aside class="notes">ArchiMate is the "wow" moment. Even if they don't have Archi, show the XML file to prove it's a real standard.</aside>
+  </section>
+
+  <!-- CUR 7 — /drawio + Wrap -->
+  <section data-background-color="#0f172a">
+    <span class="role-badge badge-cur">🔭 Curious · Step 7 / 7</span>
+    <div class="step-counter">
+      <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot done"></div>
+      <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot active"></div>
+    </div>
+    <h2>Stakeholder Diagrams — One More Command</h2>
+    <div class="cmd-wrap">
+      <div class="cmd" id="cur-cmd-7">@architect /drawio</div>
+      <button class="copy-btn" onclick="copyCmd('cur-cmd-7',this)">copy</button>
+    </div>
+    <div class="expect">
+      3 <code>.drawio</code> files in <code>exports/drawio/</code> — As-Is · Target · Migration. Open with the Draw.io VS Code extension or import into Confluence.
+    </div>
+    <div class="congrats" style="margin-top:0.5em">
+      <div class="big">🎉</div>
+      <p>In under 12 minutes — from nothing — you built a TOGAF-compliant architecture vault, generated diagrams, and exported an ArchiMate model importable by enterprise tools.</p>
+    </div>
+    <div class="learn-box">
+      <h4>✅ Full tour complete</h4>
+      <ul>
+        <li><code>/new</code> <code>/decide</code> <code>/diagram</code> <code>/c4</code> <code>/status</code> <code>/todo</code> <code>/archimate</code> <code>/drawio</code></li>
+      </ul>
+    </div>
+    <div style="text-align:center; margin-top:0.5em">
+      <a class="cta-link" href="https://enzomar.github.io/archipilot/" target="_blank">🌐 Documentation</a>
+      <a class="cta-link ghost" href="https://github.com/enzomar/archipilot" target="_blank">⭐ Star on GitHub</a>
+    </div>
+    <aside class="notes">Curious track wrap-up. The full tour is done. CTA to install and star.</aside>
+  </section>
+
+</section><!-- end CURIOUS track -->
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SLIDE 5 — FINAL CTA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section data-background-color="#0f172a">
+  <div class="title-slide">
+    <div style="font-size:2.4em; margin-bottom:0.15em;">🧭</div>
+    <h1>archipilot</h1>
+    <p class="sub">Enterprise Architecture Copilot · Free · Open Source · TOGAF-aligned</p>
+    <hr style="border-color:#334155; margin: 0.8em auto; width: 40%;" />
+    <div class="cols3" style="margin-top:0.8em; text-align:left">
+      <div class="card">
+        <h4>📦 Install</h4>
+        <p>VS Code → Extensions → search <code>enzomar.archipilot</code></p>
+        <p>or: <code>ext install enzomar.archipilot</code></p>
+      </div>
+      <div class="card">
+        <h4>⭐ Star &amp; Contribute</h4>
+        <p>github.com/enzomar/<br/>archipilot</p>
+      </div>
+      <div class="card">
+        <h4>🌐 Documentation</h4>
+        <p>enzomar.github.io/<br/>archipilot</p>
+      </div>
+    </div>
+    <div style="margin-top:0.8em; display:flex; justify-content:center; gap:0.5em; flex-wrap:wrap">
+      <div style="font-size:0.7em; background:#1e293b; padding:0.4em 0.75em; border-radius:6px; color:#94a3b8;">
+        🆓 Free · MIT License
+      </div>
+      <div style="font-size:0.7em; background:#1e293b; padding:0.4em 0.75em; border-radius:6px; color:#94a3b8;">
+        📄 Works on Markdown files · Git-native
+      </div>
+      <div style="font-size:0.7em; background:#1e293b; padding:0.4em 0.75em; border-radius:6px; color:#94a3b8;">
+        🏛 TOGAF ADM aligned
+      </div>
+      <div style="font-size:0.7em; background:#1e293b; padding:0.4em 0.75em; border-radius:6px; color:#94a3b8;">
+        🔌 ArchiMate 3.2 · Draw.io export
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Final CTA. Hold here at the end of any track.</aside>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script>
+  /* ─── Reveal init ──────────────────────────────────── */
+  Reveal.initialize({
+    hash: true,
+    slideNumber: false,
+    transition: 'slide',
+    backgroundTransition: 'fade',
+    progress: true,
+    controls: true,
+    center: false,
+    width: 1280,
+    height: 720,
+    margin: 0.03,
+    minScale: 0.4,
+    maxScale: 1.3,
+    plugins: [ RevealHighlight, RevealNotes ]
+  });
+
+  /* ─── Role picker navigation ───────────────────────── */
+  function goTo(h, v) {
+    Reveal.slide(h, v);
+  }
+
+  /* ─── Copy to clipboard ────────────────────────────── */
+  function copyCmd(id, btn) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✓ copied';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'copy';
+        btn.classList.remove('copied');
+      }, 1800);
+    }).catch(() => {
+      /* fallback for non-secure context */
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.textContent = '✓ copied';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'copy';
+        btn.classList.remove('copied');
+      }, 1800);
+    });
+  }
+</script>
+</body>
+</html>
