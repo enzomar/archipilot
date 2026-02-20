@@ -1,8 +1,12 @@
 /**
  * Core command validator – validates architecture commands against schemas.
  * Zero VS Code dependencies – safe to import in tests and non-VS-Code contexts.
+ *
+ * Supports two levels of validation:
+ * 1. Schema validation (structural) via validateCommands()
+ * 2. Vault-aware validation (semantic) via validateCommandsAgainstVault()
  */
-import { ArchCommand, ArchCommandType } from '../types.js';
+import { ArchCommand, ArchCommandType, VaultFile } from '../types.js';
 
 /** Required fields per command type */
 export const COMMAND_SCHEMAS: Record<ArchCommandType, string[]> = {
@@ -143,4 +147,147 @@ export function validateMetamodel(commands: ArchCommand[]): MetamodelWarning[] {
   }
 
   return warnings;
+}
+
+// ── Vault-aware validation ─────────────────────────────────────
+
+export interface VaultValidationResult {
+  command: ArchCommand;
+  errors: string[];
+  warnings: string[];
+  /** Suggested fix (e.g. closest matching file or section) */
+  suggestions: string[];
+}
+
+/**
+ * Validate commands against the actual vault (file existence, section headings, etc.).
+ * Returns per-command results with errors, warnings, and auto-fix suggestions.
+ */
+export function validateCommandsAgainstVault(
+  commands: ArchCommand[],
+  vaultFiles: VaultFile[]
+): VaultValidationResult[] {
+  const fileNames = new Set(vaultFiles.map((f) => f.name));
+  const fileMap = new Map(vaultFiles.map((f) => [f.name, f]));
+  const results: VaultValidationResult[] = [];
+
+  for (const cmd of commands) {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    const suggestions: string[] = [];
+
+    // ── File existence checks ──
+    if (cmd.command === 'CREATE_FILE') {
+      if (fileNames.has(cmd.file)) {
+        errors.push(`File "${cmd.file}" already exists in vault. Use UPDATE_SECTION or APPEND_TO_FILE instead.`);
+      }
+    } else {
+      // All non-create commands require the target file to exist
+      if (!fileNames.has(cmd.file)) {
+        errors.push(`File "${cmd.file}" not found in vault.`);
+        // Suggest closest match
+        const closest = findClosestFileName(cmd.file, [...fileNames]);
+        if (closest) {
+          suggestions.push(`Did you mean "${closest}"?`);
+        }
+      }
+    }
+
+    // ── Section heading validation for UPDATE_SECTION ──
+    if (cmd.command === 'UPDATE_SECTION') {
+      const targetFile = fileMap.get(cmd.file);
+      if (targetFile) {
+        const headings = extractHeadings(targetFile.content);
+        const normalizedSection = cmd.section.trim();
+
+        if (!headings.some((h) => h === normalizedSection)) {
+          // Try fuzzy match
+          const closest = findClosestHeading(normalizedSection, headings);
+          if (closest) {
+            warnings.push(
+              `Section "${normalizedSection}" not found exactly. Closest match: "${closest}".`
+            );
+            suggestions.push(`Consider using "${closest}" as the section heading.`);
+          } else {
+            errors.push(
+              `Section "${normalizedSection}" not found in "${cmd.file}". ` +
+              `Available headings: ${headings.slice(0, 8).join(', ')}${headings.length > 8 ? '...' : ''}`
+            );
+          }
+        }
+      }
+    }
+
+    // ── ADD_DECISION: check for duplicate decision IDs ──
+    if (cmd.command === 'ADD_DECISION') {
+      const targetFile = fileMap.get(cmd.file);
+      if (targetFile && targetFile.content.includes(cmd.decision_id)) {
+        errors.push(`Decision "${cmd.decision_id}" already exists in "${cmd.file}".`);
+      }
+    }
+
+    results.push({ command: cmd, errors, warnings, suggestions });
+  }
+
+  return results;
+}
+
+/** Extract markdown headings from content */
+function extractHeadings(content: string): string[] {
+  return content
+    .split('\n')
+    .filter((line) => /^#{1,6}\s/.test(line))
+    .map((line) => line.trim());
+}
+
+/** Levenshtein distance for fuzzy matching */
+function levenshtein(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  const d: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) d[i][0] = i;
+  for (let j = 0; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      d[i][j] = Math.min(
+        d[i - 1][j] + 1,
+        d[i][j - 1] + 1,
+        d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+      );
+    }
+  }
+  return d[m][n];
+}
+
+/** Find closest matching file name (within reasonable edit distance) */
+function findClosestFileName(target: string, candidates: string[]): string | null {
+  const lower = target.toLowerCase();
+  let best: string | null = null;
+  let bestDist = Infinity;
+
+  for (const c of candidates) {
+    const dist = levenshtein(lower, c.toLowerCase());
+    if (dist < bestDist && dist <= Math.max(3, target.length * 0.4)) {
+      bestDist = dist;
+      best = c;
+    }
+  }
+  return best;
+}
+
+/** Find closest matching heading (case-insensitive, ignoring leading #) */
+function findClosestHeading(target: string, headings: string[]): string | null {
+  const normalizedTarget = target.replace(/^#+\s*/, '').toLowerCase();
+  let best: string | null = null;
+  let bestDist = Infinity;
+
+  for (const h of headings) {
+    const normalizedH = h.replace(/^#+\s*/, '').toLowerCase();
+    const dist = levenshtein(normalizedTarget, normalizedH);
+    if (dist < bestDist && dist <= Math.max(3, normalizedTarget.length * 0.4)) {
+      bestDist = dist;
+      best = h;
+    }
+  }
+  return best;
 }

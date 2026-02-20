@@ -142,11 +142,15 @@
           },
           {
             "name": "review",
-            "description": "Automated architecture review — assess quality, completeness, and TOGAF compliance"
+            "description": "Automated architecture review — assess quality, completeness, and TOGAF compliance (alias for /audit)"
           },
           {
             "name": "gate",
-            "description": "Phase gate checklist — evaluate whether a TOGAF ADM phase is ready to proceed"
+            "description": "Phase gate checklist — evaluate whether a TOGAF ADM phase is ready to proceed (alias for /audit)"
+          },
+          {
+            "name": "audit",
+            "description": "Unified vault health check — combines status, review, and gate assessment. Use --quick for a summary or --full for comprehensive audit."
           },
           {
             "name": "scan",
@@ -273,6 +277,11 @@
             "type": "string"
           },
           "description": "List of Quick Action labels or command shortcuts to hide from the sidebar (e.g. [\"Sizing Catalogue\", \"/sizing\"]). Use the label text or the /command shortcut shown in the Quick Actions panel."
+        },
+        "archipilot.contextScoping": {
+          "type": "boolean",
+          "default": true,
+          "description": "When enabled, each command loads only the vault files relevant to its TOGAF phase (reduces token usage, improves response quality). Disable to always send the full vault."
         }
       }
     },
@@ -283,35 +292,51 @@
         "description": "Set up your TOGAF-aligned architecture vault and start working with your Enterprise Architecture Copilot.",
         "steps": [
           {
-            "id": "createVault",
-            "title": "Create an Architecture Vault",
-            "description": "Open Copilot Chat and type **@architect /new MyProject** to scaffold a TOGAF-aligned vault with 27 template files.\n\n[Create a vault](command:archipilot.newVault)",
+            "id": "scanOrCreate",
+            "title": "1. Scan Workspace or Create Vault",
+            "description": "**Option A — From existing code:** Type **@architect /scan** to auto-generate a TOGAF vault from your source code.\n\n**Option B — From scratch:** Type **@architect /new MyProject** to scaffold an empty vault.\n\n[Scan Workspace](command:archipilot.scanWorkspace)\n[Create Empty Vault](command:archipilot.newVault)",
             "media": {
               "markdown": "media/walkthrough-create.md"
             }
           },
           {
-            "id": "checkStatus",
-            "title": "Check Vault Status",
-            "description": "Type **@architect /status** in Copilot Chat to see your vault overview — file counts, decision statuses, and open questions.\n\n[Show status](command:archipilot.showStatus)",
+            "id": "auditVault",
+            "title": "2. Audit Your Vault",
+            "description": "Run **@architect /audit** for a comprehensive health check — combines status dashboard, quality review, and gate assessment in one command.\n\nUse **@architect /audit --quick** for a summary.\n\n[Show status](command:archipilot.showStatus)",
             "media": {
               "markdown": "media/walkthrough-status.md"
             }
           },
           {
             "id": "analyzeArchitecture",
-            "title": "Analyze Architecture Impact",
+            "title": "3. Analyze Architecture Impact",
             "description": "Ask **@architect /analyze** a question like *\"What is the impact of migrating to microservices?\"* to get a grounded analysis from your vault.",
             "media": {
               "markdown": "media/walkthrough-analyze.md"
             }
           },
           {
-            "id": "updateVault",
-            "title": "Update Your Vault",
-            "description": "Use **@architect /update** to add decisions, update sections, or modify metadata. archipilot shows a diff preview before applying changes.",
+            "id": "decideAndRecord",
+            "title": "4. Make Decisions",
+            "description": "Use **@architect /decide** to analyze a decision. archipilot presents options first, then records the decision after you confirm.\n\nDecisions are tracked in the ADR Decision Log.",
             "media": {
               "markdown": "media/walkthrough-update.md"
+            }
+          },
+          {
+            "id": "updateVault",
+            "title": "5. Update Your Vault",
+            "description": "Use **@architect /update** to add decisions, update sections, or modify metadata. archipilot shows a diff preview before applying any changes.\n\nUse **--dry-run** to preview without applying.",
+            "media": {
+              "markdown": "media/walkthrough-update.md"
+            }
+          },
+          {
+            "id": "generateDiagrams",
+            "title": "6. Generate Diagrams & Exports",
+            "description": "Generate architecture diagrams and exports:\n\n- **@architect /c4** — C4 model diagrams\n- **@architect /timeline** — Gantt timeline\n- **@architect /archimate** — ArchiMate XML export\n- **@architect /drawio** — Draw.io diagrams\n- **@architect /diagram** — Context diagram from WikiLinks",
+            "media": {
+              "markdown": "media/walkthrough-analyze.md"
             }
           }
         ]

@@ -9,6 +9,8 @@ import { buildVaultTemplate } from './vault-template.js';
 import {
   buildAnalysisPrompt,
   buildDecidePrompt,
+  buildDecideAnalysisPrompt,
+  buildDecideRecordPrompt,
   buildUpdatePrompt,
   buildStatusPrompt,
   buildDefaultPrompt,
@@ -21,7 +23,9 @@ import {
   buildReviewPrompt,
   buildGatePrompt,
   buildScanPrompt,
+  buildAuditPrompt,
 } from './prompts.js';
+import type { AuditScope } from './prompts.js';
 import { scanWorkspaceFiles, formatScanContext } from './source-scanner.js';
 import {
   exportToArchimate,
@@ -146,19 +150,30 @@ export class ArchitectParticipant {
       return this._handleStatus(request, chatContext, stream, token);
     }
 
-    // ── Handle /review command ──
+    // ── Handle /review command (alias → /audit) ──
     if (request.command === 'review') {
-      return this._handleReview(request, chatContext, stream, token);
+      return this._handleAudit(request, chatContext, stream, token, 'full');
     }
 
-    // ── Handle /gate command ──
+    // ── Handle /gate command (alias → /audit) ──
     if (request.command === 'gate') {
-      return this._handleGate(request, chatContext, stream, token);
+      return this._handleAudit(request, chatContext, stream, token, 'full');
+    }
+
+    // ── Handle /audit command (unified health check) ──
+    if (request.command === 'audit') {
+      const scope: AuditScope = request.prompt.includes('--quick') ? 'quick' : 'full';
+      return this._handleAudit(request, chatContext, stream, token, scope);
     }
 
     // ── Handle /scan command ──
     if (request.command === 'scan') {
       return this._handleScan(request, stream, token);
+    }
+
+    // ── Handle /decide command (two-step: analysis → record) ──
+    if (request.command === 'decide') {
+      return this._handleDecide(request, chatContext, stream, token);
     }
 
     // ── Ensure vault is loaded ──
@@ -172,10 +187,11 @@ export class ArchitectParticipant {
       return {};
     }
 
-    // ── Load vault context ──
+    // ── Load vault context (scoped by command mode) ──
     stream.progress('Loading vault context...');
     const vaultInfo = await this._vaultManager.loadVault();
-    const vaultContext = this._vaultManager.buildContext();
+    const ctxMode = (request.command as import('./core/context.js').ContextMode) ?? 'default';
+    const vaultContext = this._vaultManager.buildContext(undefined, undefined, ctxMode);
 
     // ── Build system prompt based on command ──
     let systemPrompt: string;
@@ -183,11 +199,8 @@ export class ArchitectParticipant {
       case 'analyze':
         systemPrompt = buildAnalysisPrompt(vaultContext);
         break;
-      case 'decide':
-        systemPrompt = buildDecidePrompt(vaultContext);
-        break;
       case 'update':
-        systemPrompt = buildUpdatePrompt(vaultContext);
+        systemPrompt = buildUpdatePrompt(vaultContext, this._vaultManager.getYamlSummaryTable());
         break;
       default:
         systemPrompt = buildDefaultPrompt(vaultContext);
@@ -289,7 +302,7 @@ export class ArchitectParticipant {
         }
 
         // Step 2: Diff preview
-        const validCommands = commands.filter((cmd) => {
+        let validCommands = commands.filter((cmd) => {
           const invalid = validationErrors.find((ve) => ve.command === cmd);
           return !invalid;
         });
@@ -297,13 +310,61 @@ export class ArchitectParticipant {
         const previews = await this._fileUpdater.previewCommands(validCommands);
         stream.markdown(`📋 **${previews.length} proposed change(s):**\n\n`);
 
+        let hasBlockingErrors = false;
         for (const preview of previews) {
           stream.markdown(`### ${preview.isNewFile ? '🆕' : '✏️'} \`${preview.command}\` → \`${preview.file}\`\n`);
           stream.markdown(`${preview.summary}\n\n`);
-          if (preview.before) {
-            stream.markdown(`**Before:**\n\`\`\`\n${preview.before}\n\`\`\`\n`);
+
+          // Show vault validation issues
+          if (preview.validationErrors?.length) {
+            hasBlockingErrors = true;
+            stream.markdown(`> 🛑 **Validation errors:**\n`);
+            for (const e of preview.validationErrors) {
+              stream.markdown(`> - ${e}\n`);
+            }
+            stream.markdown('\n');
           }
-          stream.markdown(`**After:**\n\`\`\`\n${preview.after}\n\`\`\`\n\n`);
+          if (preview.validationWarnings?.length) {
+            for (const w of preview.validationWarnings) {
+              stream.markdown(`> ⚠️ ${w}\n`);
+            }
+            stream.markdown('\n');
+          }
+          if (preview.validationSuggestions?.length) {
+            for (const s of preview.validationSuggestions) {
+              stream.markdown(`> 💡 ${s}\n`);
+            }
+            stream.markdown('\n');
+          }
+
+          // Prefer unified diff when available
+          if (preview.unifiedDiff) {
+            stream.markdown(`\`\`\`diff\n${preview.unifiedDiff}\n\`\`\`\n\n`);
+          } else {
+            if (preview.before) {
+              stream.markdown(`**Before:**\n\`\`\`\n${preview.before}\n\`\`\`\n`);
+            }
+            stream.markdown(`**After:**\n\`\`\`\n${preview.after}\n\`\`\`\n\n`);
+          }
+        }
+
+        if (hasBlockingErrors) {
+          stream.markdown('\n> 🛑 **Some commands have validation errors.** Fix them and try again, or the errored commands will be skipped.\n\n');
+          // Remove commands with validation errors
+          const blockedFiles = new Set(
+            previews
+              .filter((p) => p.validationErrors?.length)
+              .map((p) => JSON.stringify({ file: p.file, command: p.command }))
+          );
+          const safeCommands = validCommands.filter(
+            (cmd) => !blockedFiles.has(JSON.stringify({ file: cmd.file, command: cmd.command }))
+          );
+          if (safeCommands.length === 0 || isDryRun) {
+            stream.markdown('> No valid commands to apply.\n');
+            return {};
+          }
+          // Replace validCommands with safe subset for apply step
+          validCommands = safeCommands;
         }
 
         // Dry-run mode: show preview only, no confirmation or apply
@@ -566,7 +627,7 @@ export class ArchitectParticipant {
 
     stream.progress('Loading vault for ArchiMate export...');
     const vaultInfo = await this._vaultManager.loadVault();
-    const vaultContext = this._vaultManager.buildContext();
+    const vaultContext = this._vaultManager.buildContext(undefined, undefined, 'archimate');
 
     // ── Step 1: Extract and serialize ──
     stream.progress('Extracting ArchiMate model from vault...');
@@ -664,7 +725,7 @@ export class ArchitectParticipant {
 
     stream.progress('Loading vault for Draw.io export...');
     const vaultInfo = await this._vaultManager.loadVault();
-    const vaultContext = this._vaultManager.buildContext();
+    const vaultContext = this._vaultManager.buildContext(undefined, undefined, 'drawio');
 
     // ── Step 1: Generate Draw.io diagrams ──
     stream.progress('Generating Draw.io diagrams (As-Is, Target, Migration)...');
@@ -789,7 +850,7 @@ export class ArchitectParticipant {
 
     stream.progress('Scanning vault for TOGAF action items...');
     const vaultInfo = await this._vaultManager.loadVault();
-    const vaultContext = this._vaultManager.buildContext();
+    const vaultContext = this._vaultManager.buildContext(undefined, undefined, 'todo');
 
     // ── Step 1: Extract structured TODOs ──
     stream.progress('Extracting open decisions, risks, questions, work packages...');
@@ -853,7 +914,7 @@ export class ArchitectParticipant {
 
     stream.progress('Extracting C4 model data from vault...');
     const vaultInfo = await this._vaultManager.loadVault();
-    const vaultContext = this._vaultManager.buildContext();
+    const vaultContext = this._vaultManager.buildContext(undefined, undefined, 'c4');
 
     // ── Step 1: Deterministic scaffold ──
     stream.progress('Building C4 scaffold from components, integrations, and diagrams...');
@@ -917,7 +978,7 @@ export class ArchitectParticipant {
 
     stream.progress('Extracting sizing data from vault...');
     const vaultInfo = await this._vaultManager.loadVault();
-    const vaultContext = this._vaultManager.buildContext();
+    const vaultContext = this._vaultManager.buildContext(undefined, undefined, 'sizing');
 
     // ── Step 1: Deterministic scaffold ──
     stream.progress('Building sizing scaffold from components, NFRs, and scenarios...');
@@ -981,7 +1042,7 @@ export class ArchitectParticipant {
 
     stream.progress('Extracting timeline data from vault...');
     const vaultInfo = await this._vaultManager.loadVault();
-    const vaultContext = this._vaultManager.buildContext();
+    const vaultContext = this._vaultManager.buildContext(undefined, undefined, 'timeline');
 
     // ── Step 1: Deterministic scaffold ──
     stream.progress('Building timeline scaffold from roadmap, milestones, and risks...');
@@ -1259,7 +1320,7 @@ export class ArchitectParticipant {
 
     if (wantAnalysis && !token.isCancellationRequested) {
       stream.progress('Analyzing vault status...');
-      const vaultContext = this._vaultManager.buildContext();
+      const vaultContext = this._vaultManager.buildContext(undefined, undefined, 'status');
       const systemPrompt = buildStatusPrompt(vaultContext);
       const messages: vscode.LanguageModelChatMessage[] = [
         vscode.LanguageModelChatMessage.User(systemPrompt),
@@ -1306,7 +1367,7 @@ export class ArchitectParticipant {
 
     stream.progress('Loading vault for architecture review...');
     const vaultInfo = await this._vaultManager.loadVault();
-    const vaultContext = this._vaultManager.buildContext();
+    const vaultContext = this._vaultManager.buildContext(undefined, undefined, 'review');
 
     // Determine scope: specific file or full vault
     const userPrompt = request.prompt.trim();
@@ -1365,7 +1426,7 @@ export class ArchitectParticipant {
 
     stream.progress('Loading vault for gate assessment...');
     const vaultInfo = await this._vaultManager.loadVault();
-    const vaultContext = this._vaultManager.buildContext();
+    const vaultContext = this._vaultManager.buildContext(undefined, undefined, 'gate');
 
     // Extract phase from user prompt
     const userPrompt = request.prompt.trim() || 'Assess all TOGAF ADM phases for gate readiness.';
@@ -1482,6 +1543,255 @@ export class ArchitectParticipant {
   }
 
   /**
+   * Handle /audit – unified vault health check combining status + review + gate.
+   *
+   * Flags:
+   *   --quick : concise summary (top issues + actions)
+   *   --full  : comprehensive three-part audit (default)
+   */
+  private async _handleAudit(
+    request: vscode.ChatRequest,
+    chatContext: vscode.ChatContext,
+    stream: vscode.ChatResponseStream,
+    token: vscode.CancellationToken,
+    scope: AuditScope = 'full'
+  ): Promise<vscode.ChatResult> {
+    try {
+      await this._ensureVault(stream);
+    } catch {
+      stream.markdown(
+        '⚠️ **No architecture vault found.**\n\n' +
+          'Use `/switch` to select a vault folder, or set `archipilot.vaultPath` in settings.'
+      );
+      return {};
+    }
+
+    stream.progress(`Running ${scope} architecture audit...`);
+    const vaultInfo = await this._vaultManager.loadVault();
+
+    // ── Pre-compute dashboard (same as /status) ──
+    const summary = extractTodos(vaultInfo.files);
+    const statusCounts: Record<string, number> = {};
+    for (const f of vaultInfo.files) {
+      const fmMatch = f.content.match(/^---\n([\s\S]*?)\n---/);
+      let status = 'unknown';
+      if (fmMatch) {
+        const sm = fmMatch[1].match(/^status:\s*(.+)$/m);
+        if (sm) status = sm[1].trim().toLowerCase();
+      }
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    }
+
+    const lines: string[] = [];
+    lines.push(`## 🔍 Architecture Audit — ${scope === 'quick' ? 'Quick' : 'Full'}\n`);
+    lines.push(`**Vault:** ${vaultInfo.name}  ·  **Files:** ${vaultInfo.fileCount}\n`);
+
+    // Document maturity
+    lines.push(`### Document Maturity\n`);
+    lines.push(`| Status | Count |`);
+    lines.push(`|--------|-------|`);
+    for (const [st, count] of Object.entries(statusCounts).sort((a, b) => b[1] - a[1])) {
+      const icon = st.includes('approved') ? '✅' : st.includes('draft') ? '📝' : st.includes('review') ? '👁️' : '❓';
+      lines.push(`| ${icon} ${st} | ${count} |`);
+    }
+    lines.push(``);
+
+    // Key metrics
+    const decisions = summary.byCategoryCount['decision'] || 0;
+    const pendingDecisions = summary.byCategoryCount['decision-pending'] || 0;
+    const risks = summary.byCategoryCount['risk'] || 0;
+    const risksNoOwner = summary.byCategoryCount['risk-no-owner'] || 0;
+    const questions = summary.byCategoryCount['question'] || 0;
+    const brokenLinks = summary.byCategoryCount['broken-link'] || 0;
+
+    lines.push(`### Key Metrics\n`);
+    lines.push(`| Metric | Count | Status |`);
+    lines.push(`|--------|-------|--------|`);
+    lines.push(`| Open Decisions | ${decisions} | ${decisions > 3 ? '🔴' : decisions > 0 ? '🟡' : '✅'} |`);
+    lines.push(`| Proposed Decisions | ${pendingDecisions} | ${pendingDecisions > 5 ? '🔴' : pendingDecisions > 0 ? '🟡' : '✅'} |`);
+    lines.push(`| Open Risks | ${risks} | ${risks > 5 ? '🔴' : risks > 0 ? '🟡' : '✅'} |`);
+    lines.push(`| Risks w/o Owners | ${risksNoOwner} | ${risksNoOwner > 0 ? '🔴' : '✅'} |`);
+    lines.push(`| Open Questions | ${questions} | ${questions > 10 ? '🟡' : '✅'} |`);
+    lines.push(`| Broken WikiLinks | ${brokenLinks} | ${brokenLinks > 0 ? '🟡' : '✅'} |`);
+    lines.push(`| TBD Ownership | ${summary.tbd_ownership_count} | ${summary.tbd_ownership_count > 3 ? '🔴' : summary.tbd_ownership_count > 0 ? '🟡' : '✅'} |`);
+    lines.push(`| **Total Open Items** | **${summary.totalCount}** | |`);
+    lines.push(``);
+
+    const dashboardMd = lines.join('\n');
+    stream.markdown(dashboardMd);
+
+    // ── Call LLM with unified audit prompt ──
+    stream.progress('AI analyzing vault health...');
+    const vaultContext = this._vaultManager.buildContext(undefined, undefined, 'audit');
+    const yamlSummary = this._vaultManager.getYamlSummaryTable();
+    const userPrompt = request.prompt.replace(/--(?:quick|full)\b/gi, '').trim();
+
+    const systemPrompt = buildAuditPrompt(vaultContext, dashboardMd, scope, yamlSummary);
+    const messages: vscode.LanguageModelChatMessage[] = [
+      vscode.LanguageModelChatMessage.User(systemPrompt),
+      vscode.LanguageModelChatMessage.Assistant(dashboardMd),
+      vscode.LanguageModelChatMessage.User(
+        userPrompt || `Perform a ${scope} architecture audit of the vault.`
+      ),
+    ];
+
+    try {
+      const chatResponse = await request.model.sendRequest(messages, {}, token);
+      stream.markdown('\n\n---\n\n');
+      for await (const fragment of chatResponse.text) {
+        stream.markdown(fragment);
+      }
+    } catch (err) {
+      if (err instanceof vscode.LanguageModelError) {
+        stream.markdown(`\n\n⚠️ **LLM Error:** ${err.message}`);
+      }
+    }
+
+    stream.markdown(`\n\n---\n*Audit: ${vaultInfo.name} (${vaultInfo.fileCount} files) · scope: ${scope}*`);
+    return {};
+  }
+
+  /**
+   * Handle /decide – two-step decision support.
+   *
+   * Step 1: If the conversation has no prior decide analysis, run analysis-only
+   *         (no JSON commands) and ask user to confirm their choice.
+   * Step 2: If prior turns contain a decide analysis, detect confirmation
+   *         keywords and generate the ADD_DECISION command.
+   */
+  private async _handleDecide(
+    request: vscode.ChatRequest,
+    chatContext: vscode.ChatContext,
+    stream: vscode.ChatResponseStream,
+    token: vscode.CancellationToken
+  ): Promise<vscode.ChatResult> {
+    // ── Ensure vault is loaded ──
+    try {
+      await this._ensureVault(stream);
+    } catch {
+      stream.markdown(
+        '⚠️ **No architecture vault found.**\n\n' +
+          'Use `/switch` to select a vault folder, or set `archipilot.vaultPath` in settings.'
+      );
+      return {};
+    }
+
+    stream.progress('Loading vault for decision support...');
+    await this._vaultManager.loadVault();
+    const vaultContext = this._vaultManager.buildContext(undefined, undefined, 'decide');
+
+    // Detect if user is confirming a previous decision analysis
+    const userPrompt = request.prompt.trim();
+    const confirmKeywords = /\b(approve|confirm|accept|go with|choose|select|record|yes)\b/i;
+    const hasPriorDecideAnalysis = chatContext.history.some(
+      (turn) => 'participant' in turn && turn.participant === 'archipilot.architect' &&
+        'command' in turn && turn.command === 'decide'
+    );
+    const isConfirmation = hasPriorDecideAnalysis && confirmKeywords.test(userPrompt);
+
+    if (isConfirmation) {
+      // ── Step 2: Record decision ──
+      stream.progress('Generating decision record...');
+      const systemPrompt = buildDecideRecordPrompt(vaultContext);
+      const messages: vscode.LanguageModelChatMessage[] = [
+        vscode.LanguageModelChatMessage.User(systemPrompt),
+      ];
+
+      // Include conversation history for context
+      for (const turn of chatContext.history) {
+        if ('prompt' in turn) {
+          messages.push(vscode.LanguageModelChatMessage.User(turn.prompt));
+        } else if ('response' in turn) {
+          const text = turn.response.map((r: any) => r.value ?? '').join('');
+          if (text) {
+            messages.push(vscode.LanguageModelChatMessage.Assistant(text));
+          }
+        }
+      }
+
+      messages.push(vscode.LanguageModelChatMessage.User(userPrompt));
+
+      let fullResponse = '';
+      try {
+        const chatResponse = await request.model.sendRequest(messages, {}, token);
+        for await (const fragment of chatResponse.text) {
+          stream.markdown(fragment);
+          fullResponse += fragment;
+        }
+      } catch (err) {
+        if (err instanceof vscode.LanguageModelError) {
+          stream.markdown(`\n\n⚠️ **LLM Error:** ${err.message}`);
+        }
+        return {};
+      }
+
+      // Parse and apply command from response
+      const commands = this._fileUpdater.parseCommands(fullResponse);
+      if (commands.length > 0) {
+        const validationErrors = this._fileUpdater.validateCommands(commands);
+        const validCommands = commands.filter(
+          (cmd) => !validationErrors.some((ve) => ve.command === cmd)
+        );
+
+        if (validCommands.length > 0) {
+          const previews = await this._fileUpdater.previewCommands(validCommands);
+          stream.markdown('\n\n---\n\n📋 **Proposed decision record:**\n\n');
+          for (const preview of previews) {
+            stream.markdown(`### ${preview.isNewFile ? '🆕' : '✏️'} \`${preview.command}\` → \`${preview.file}\`\n`);
+            stream.markdown(`${preview.summary}\n\n`);
+            if (preview.unifiedDiff) {
+              stream.markdown(`\`\`\`diff\n${preview.unifiedDiff}\n\`\`\`\n\n`);
+            }
+          }
+
+          const confirm = await vscode.window.showWarningMessage(
+            `archipilot: Record ${validCommands.length} decision(s)?`,
+            { modal: true, detail: previews.map((p) => `• ${p.summary}`).join('\n') },
+            'Record Decision',
+            'Cancel'
+          );
+
+          if (confirm === 'Record Decision') {
+            const promptHash = this._hashString(request.prompt);
+            const results = await this._fileUpdater.applyCommands(validCommands, promptHash);
+            for (const result of results) {
+              stream.markdown(result.success ? `\n✅ ${result.message}\n` : `\n❌ ${result.message}\n`);
+            }
+            await this._vaultManager.loadVault();
+            vscode.commands.executeCommand('archipilot.refreshSidebar');
+          } else {
+            stream.markdown('\n> ℹ️ **Decision not recorded** — no files were modified.\n');
+          }
+        }
+      }
+    } else {
+      // ── Step 1: Analysis only ──
+      stream.progress('Analyzing decision options...');
+      const systemPrompt = buildDecideAnalysisPrompt(vaultContext);
+      const messages: vscode.LanguageModelChatMessage[] = [
+        vscode.LanguageModelChatMessage.User(systemPrompt),
+        vscode.LanguageModelChatMessage.Assistant('(ready)'),
+        vscode.LanguageModelChatMessage.User(
+          userPrompt || 'What architecture decisions need to be resolved?'
+        ),
+      ];
+
+      try {
+        const chatResponse = await request.model.sendRequest(messages, {}, token);
+        for await (const fragment of chatResponse.text) {
+          stream.markdown(fragment);
+        }
+      } catch (err) {
+        if (err instanceof vscode.LanguageModelError) {
+          stream.markdown(`\n\n⚠️ **LLM Error:** ${err.message}`);
+        }
+      }
+    }
+
+    return {};
+  }
+
+  /**
    * Handle /scan – generate or enrich a TOGAF vault by scanning workspace source code.
    *
    * Flags:
@@ -1570,7 +1880,7 @@ export class ArchitectParticipant {
       }
       stream.progress('Loading existing vault context...');
       vaultInfo = await this._vaultManager.loadVault();
-      existingVaultContext = this._vaultManager.buildContext();
+      existingVaultContext = this._vaultManager.buildContext(undefined, undefined, 'scan');
       stream.markdown(
         `📂 **Appending to vault:** \`${vaultInfo.name}\` (${vaultInfo.fileCount} files)\n\n`
       );
@@ -1622,11 +1932,13 @@ export class ArchitectParticipant {
 
     // ── Step 4: Build LLM prompt with scan context ───────────────────────
     const scanContext = formatScanContext(scan);
+    const yamlSummary = isAppendMode ? this._vaultManager.getYamlSummaryTable() : undefined;
     const systemPrompt = buildScanPrompt(
       scanContext,
       existingVaultContext,
       scan.projectName,
-      isAppendMode
+      isAppendMode,
+      yamlSummary
     );
 
     const messages: vscode.LanguageModelChatMessage[] = [
@@ -1700,20 +2012,84 @@ export class ArchitectParticipant {
       return {};
     }
 
-    // Preview
+    // Preview with vault-aware validation
     const previews = await this._fileUpdater.previewCommands(validCommands);
+
+    // ── Extraction summary table ──
     stream.markdown(
-      `📋 **${previews.length} proposed change(s) to vault \`${vaultInfo.name}\`:**\n\n`
+      `📋 **Extraction Summary — ${previews.length} proposed change(s) to vault \`${vaultInfo.name}\`:**\n\n`
     );
+    stream.markdown(`| # | Command | Target File | Summary | Status |\n`);
+    stream.markdown(`|---|---------|-------------|---------|--------|\n`);
+    let rowNum = 0;
     for (const preview of previews) {
+      rowNum++;
+      const hasError = (preview.validationErrors?.length ?? 0) > 0;
+      const hasWarn = (preview.validationWarnings?.length ?? 0) > 0;
+      const statusIcon = hasError ? '🛑 Error' : hasWarn ? '⚠️ Warning' : '✅ Ready';
       stream.markdown(
-        `### ${preview.isNewFile ? '🆕' : '✏️'} \`${preview.command}\` → \`${preview.file}\`\n`
+        `| ${rowNum} | \`${preview.command}\` | \`${preview.file}\` | ${preview.summary} | ${statusIcon} |\n`
       );
+    }
+    stream.markdown('\n');
+
+    // ── Detailed diffs ──
+    let hasBlockingErrors = false;
+    stream.markdown(`<details><summary>📝 <strong>Detailed diffs (click to expand)</strong></summary>\n\n`);
+    for (const preview of previews) {
+      stream.markdown(`### ${preview.isNewFile ? '🆕' : '✏️'} \`${preview.command}\` → \`${preview.file}\`\n`);
       stream.markdown(`${preview.summary}\n\n`);
-      if (preview.before) {
-        stream.markdown(`**Before:**\n\`\`\`\n${preview.before}\n\`\`\`\n`);
+
+      // Show vault validation issues
+      if (preview.validationErrors?.length) {
+        hasBlockingErrors = true;
+        stream.markdown(`> 🛑 **Validation errors:**\n`);
+        for (const e of preview.validationErrors) {
+          stream.markdown(`> - ${e}\n`);
+        }
+        stream.markdown('\n');
       }
-      stream.markdown(`**After:**\n\`\`\`\n${preview.after}\n\`\`\`\n\n`);
+      if (preview.validationWarnings?.length) {
+        for (const w of preview.validationWarnings) {
+          stream.markdown(`> ⚠️ ${w}\n`);
+        }
+        stream.markdown('\n');
+      }
+      if (preview.validationSuggestions?.length) {
+        for (const s of preview.validationSuggestions) {
+          stream.markdown(`> 💡 ${s}\n`);
+        }
+        stream.markdown('\n');
+      }
+
+      // Prefer unified diff when available
+      if (preview.unifiedDiff) {
+        stream.markdown(`\`\`\`diff\n${preview.unifiedDiff}\n\`\`\`\n\n`);
+      } else {
+        if (preview.before) {
+          stream.markdown(`**Before:**\n\`\`\`\n${preview.before}\n\`\`\`\n`);
+        }
+        stream.markdown(`**After:**\n\`\`\`\n${preview.after}\n\`\`\`\n\n`);
+      }
+    }
+    stream.markdown(`</details>\n\n`);
+
+    if (hasBlockingErrors) {
+      stream.markdown('> 🛑 **Some commands have validation errors and will be skipped.**\n\n');
+      const blockedFiles = new Set(
+        previews
+          .filter((p) => p.validationErrors?.length)
+          .map((p) => JSON.stringify({ file: p.file, command: p.command }))
+      );
+      const safeCommands = validCommands.filter(
+        (cmd) => !blockedFiles.has(JSON.stringify({ file: cmd.file, command: cmd.command }))
+      );
+      validCommands.length = 0;
+      for (const c of safeCommands) validCommands.push(c);
+      if (validCommands.length === 0) {
+        stream.markdown('❌ No valid commands to apply after validation.\n');
+        return {};
+      }
     }
 
     // Confirm

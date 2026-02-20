@@ -17,7 +17,7 @@ This scans your workspace for package files, data models, services, infrastructu
 **What to do after `/scan`:**
 ```
 @architect /status   ← see what was detected and what’s still missing
-@architect /review   ← quality check the auto-generated content
+@architect /audit    ← unified health check (quality + completeness + gate)
 @architect /todo     ← prioritised list of what to fill in next
 ```
 
@@ -54,7 +54,7 @@ You don't need to fill every file. Start with what makes sense:
 ```
 @architect /todo     ← "What should I work on next?"
 @architect /status   ← "How complete is my architecture?"
-@architect /review   ← "Where are the quality gaps?"
+@architect /audit    ← "Where are the quality gaps?"
 ```
 
 ## 4. Evolve Incrementally
@@ -75,10 +75,10 @@ Think of the vault as a **structured notebook** for your architecture:
 | Day | Goal | Commands |
 |-----|------|----------|
 | 1 | Bootstrap | `/scan` (existing code) or `/new` (blank), `/status`, free-form questions |
-| 2 | Capture decisions | `/adr`, `/decide` |
+| 2 | Capture decisions | `/adr`, `/decide` (two-step: analyze → record) |
 | 3 | Impact & risk | `/analyze`, `/todo` |
 | 4 | Diagrams & exports | `/diagram`, `/graph`, `/c4` |
-| 5 | Governance | `/review`, `/gate`, `/update` |
+| 5 | Governance | `/audit`, `/update` |
 | 6 | Enterprise tooling | `/archimate`, `/drawio`, `/timeline`, `/scan --append` |
 
 > Each session takes 15–30 minutes. By the end of the week you'll have a working architecture repository.

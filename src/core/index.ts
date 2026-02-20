@@ -3,9 +3,10 @@
  * All exports here are free of VS Code API dependencies.
  */
 export { parseCommands } from './parser.js';
-export { validateCommands, validateMetamodel, COMMAND_SCHEMAS, VALID_COMMANDS } from './validator.js';
-export type { ValidationError, MetamodelWarning } from './validator.js';
-export { buildContext, summarizeFile } from './context.js';
+export { validateCommands, validateMetamodel, validateCommandsAgainstVault, COMMAND_SCHEMAS, VALID_COMMANDS } from './validator.js';
+export type { ValidationError, MetamodelWarning, VaultValidationResult } from './validator.js';
+export { buildContext, summarizeFile, MODE_RELEVANT_FILES, extractYamlSummary, formatYamlSummaryTable } from './context.js';
+export type { ContextMode, YamlMeta } from './context.js';
 export {
   updateSection,
   addDecision,

@@ -89,7 +89,66 @@ ${vaultContext}
 `;
 }
 
-/** DECIDE MODE – help resolve architecture decisions */
+/** DECIDE MODE – Step 1: analysis only (no JSON commands) */
+export function buildDecideAnalysisPrompt(vaultContext: string): string {
+  return `${CORE_IDENTITY}
+MODE: DECISION ANALYSIS (Step 1 of 2)
+You are helping the architect resolve an architecture decision.
+- Reference the Decision Log (X1_ADR_Decision_Log.md) and all related documents.
+- For each option, assess: strategic fit, risk, cost, governance, integration impact.
+- Provide a clear recommendation with rationale.
+- Present a structured comparison table.
+
+IMPORTANT: This is the ANALYSIS step only.
+- DO NOT output any JSON command blocks.
+- DO NOT output ADD_DECISION commands.
+- The user will confirm their choice in a follow-up message, at which point you'll generate the command.
+
+End your analysis with:
+"**To record this decision**, reply with your chosen option (e.g., 'approve option B') and I will generate the ADD_DECISION command."
+
+---
+<vault_content>
+${vaultContext}
+</vault_content>
+---
+`;
+}
+
+/** DECIDE MODE – Step 2: generate ADD_DECISION after user confirms */
+export function buildDecideRecordPrompt(vaultContext: string): string {
+  return `${CORE_IDENTITY}
+MODE: DECISION RECORDING (Step 2 of 2)
+The architect has reviewed a decision analysis and is now confirming their choice.
+- Generate an ADD_DECISION command for the confirmed option.
+- Use the next available decision ID (increment from existing decisions in X1_ADR_Decision_Log.md).
+- Include: decision_id, title, status "Approved", content (rationale + selected option), impact.
+
+Output ONLY a JSON code block:
+\`\`\`json
+{
+  "command": "ADD_DECISION",
+  "file": "X1_ADR_Decision_Log.md",
+  "decision_id": "AD-XX",
+  "title": "...",
+  "status": "Approved",
+  "content": "...",
+  "impact": "..."
+}
+\`\`\`
+
+---
+<vault_content>
+${vaultContext}
+</vault_content>
+---
+`;
+}
+
+/**
+ * @deprecated Use buildDecideAnalysisPrompt + buildDecideRecordPrompt instead.
+ * Kept for backward compatibility.
+ */
 export function buildDecidePrompt(vaultContext: string): string {
   return `${CORE_IDENTITY}
 MODE: DECISION SUPPORT
@@ -122,7 +181,10 @@ ${vaultContext}
 }
 
 /** UPDATE MODE – generate file modification commands */
-export function buildUpdatePrompt(vaultContext: string): string {
+export function buildUpdatePrompt(vaultContext: string, yamlSummary?: string): string {
+  const yamlBlock = yamlSummary
+    ? `\n<yaml_metadata_summary>\nPre-processed YAML front matter from all vault files (version, status, owner, phase).\nUse this to determine current versions and owners — no need to parse YAML yourself.\n\n${yamlSummary}\n</yaml_metadata_summary>\n`
+    : '';
   return `${CORE_IDENTITY}
 MODE: UPDATE
 You are in UPDATE MODE. The user wants to modify vault documents.
@@ -131,6 +193,7 @@ You are in UPDATE MODE. The user wants to modify vault documents.
 - Each command must be wrapped in a \`\`\`json code fence.
 - Explain briefly what each command does BEFORE the JSON block.
 - After all commands, summarize cross-document impact.
+${yamlBlock}
 
 ALLOWED COMMANDS:
 
@@ -518,7 +581,8 @@ export function buildScanPrompt(
   scanContext: string,
   existingVaultContext: string | null,
   projectName: string,
-  isAppendMode: boolean
+  isAppendMode: boolean,
+  yamlSummary?: string
 ): string {
   const mode = isAppendMode ? 'ENRICH (APPEND)' : 'GENERATE';
   const taskVerb = isAppendMode
@@ -527,6 +591,10 @@ export function buildScanPrompt(
 
   const existingVaultSection = existingVaultContext
     ? `\n<existing_vault>\n${existingVaultContext}\n</existing_vault>\n`
+    : '';
+
+  const yamlSection = yamlSummary
+    ? `\n<yaml_metadata_summary>\nPre-processed YAML front matter (version, status, owner) for all vault files.\nUse this to determine current versions when generating UPDATE_YAML_METADATA commands.\n\n${yamlSummary}\n</yaml_metadata_summary>\n`
     : '';
 
   return `${CORE_IDENTITY}
@@ -626,6 +694,7 @@ OUTPUT RULES:
 9. Skip sections where the source scan provides no relevant signals.
 10. For Mermaid diagrams (C1, D1), generate a \`\`\`mermaid\`\`\` block inside the section content showing real components/services from the scan.
 ${existingVaultSection}
+${yamlSection}
 <source_code_scan>
 ${scanContext}
 </source_code_scan>
@@ -665,6 +734,81 @@ Produce a gate checklist table:
 | Phase | Deliverable | Status | Owner | Quality | Gate |
 
 End with a **GO / NO-GO recommendation** per phase with specific blockers listed.
+
+---
+<vault_content>
+${vaultContext}
+</vault_content>
+---
+`;
+}
+
+// ── Unified /audit prompt ──────────────────────────────────────────
+
+export type AuditScope = 'quick' | 'full';
+
+/** AUDIT MODE – unified vault health check combining status + review + gate */
+export function buildAuditPrompt(
+  vaultContext: string,
+  dashboardMd: string,
+  scope: AuditScope = 'full',
+  yamlSummary?: string
+): string {
+  const yamlBlock = yamlSummary
+    ? `\n<yaml_metadata_summary>\n${yamlSummary}\n</yaml_metadata_summary>\n`
+    : '';
+
+  const quickInstructions = scope === 'quick'
+    ? `\nSCOPE: QUICK AUDIT — provide a concise health summary. Skip detailed per-file reviews.\nFocus on: key metrics, top 5 issues, recommended next actions.\n`
+    : `\nSCOPE: FULL AUDIT — comprehensive analysis covering all three dimensions below.\n`;
+
+  return `${CORE_IDENTITY}
+MODE: ARCHITECTURE AUDIT (unified health check)
+${quickInstructions}
+
+A pre-computed vault dashboard is available below. Use it as your starting data — the numbers are accurate.
+
+<dashboard>
+${dashboardMd}
+</dashboard>
+${yamlBlock}
+
+Perform a unified architecture audit combining three perspectives:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 1 — STATUS OVERVIEW (from /status)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Vault health summary: overall maturity, key metrics
+2. Document status distribution (draft/review/approved)
+3. Open items: decisions, risks, questions, ownership gaps
+4. Cross-reference consistency check
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 2 — QUALITY REVIEW (from /review)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+For each file (or the top priority files if --quick):
+1. Completeness score (1-5)
+2. TOGAF compliance rating
+3. Content quality assessment
+4. Specific findings and recommended improvements
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 3 — GATE ASSESSMENT (from /gate)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Per TOGAF ADM phase:
+1. Required deliverables present?
+2. Quality gates met? (status ≥ review, owner assigned, key sections populated)
+3. GO / NO-GO recommendation with specific blockers
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FINAL SECTION — ACTION PLAN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. **Priority actions** — top 5-7 items to address (ordered by impact)
+2. **Risk items** — architectural risks that need immediate attention
+3. **Overall vault maturity score** — 1-10 with justification
+
+Format: Use markdown headings (## Part 1, ## Part 2, ## Part 3, ## Action Plan) and tables where appropriate.
+Be direct and constructive.
 
 ---
 <vault_content>

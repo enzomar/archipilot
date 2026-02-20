@@ -16,9 +16,11 @@ import { VaultManager } from './vault.js';
 import { parseCommands as coreParse } from './core/parser.js';
 import {
   validateCommands as coreValidate,
+  validateCommandsAgainstVault as coreValidateVault,
   COMMAND_SCHEMAS,
   VALID_COMMANDS,
 } from './core/validator.js';
+import type { VaultValidationResult } from './core/validator.js';
 import {
   updateSection as coreUpdateSection,
   addDecision as coreAddDecision,
@@ -47,6 +49,12 @@ export interface DiffPreview {
   before: string;
   after: string;
   isNewFile: boolean;
+  /** Unified diff string (line-level) for non-trivial changes */
+  unifiedDiff?: string;
+  /** Vault-level validation warnings/errors */
+  validationErrors?: string[];
+  validationWarnings?: string[];
+  validationSuggestions?: string[];
 }
 
 export class FileUpdater {
@@ -64,21 +72,44 @@ export class FileUpdater {
     return coreValidate(commands);
   }
 
+  /**
+   * Validate commands against the actual vault contents.
+   * Checks file existence, section heading match, duplicate IDs, etc.
+   */
+  validateAgainstVault(commands: ArchCommand[]): VaultValidationResult[] {
+    const vaultInfo = this._vaultManager.cachedFiles;
+    return coreValidateVault(commands, vaultInfo);
+  }
+
   // ── Diff preview ─────────────────────────────────────────────────
 
   /**
    * Generate diff previews for all commands WITHOUT applying them.
    * Returns before/after content for user review.
+   * Includes vault-aware validation (file exists, section match, duplicate IDs).
    */
   async previewCommands(commands: ArchCommand[]): Promise<DiffPreview[]> {
     const previews: DiffPreview[] = [];
     const vaultPath = this._vaultManager.activeVaultPath;
     if (!vaultPath) { return previews; }
 
+    // ── Vault-aware validation ──
+    const vaultResults = this.validateAgainstVault(commands);
+    const resultMap = new Map(vaultResults.map((r) => [r.command, r]));
+
     for (const cmd of commands) {
       try {
         const preview = await this._buildPreview(vaultPath, cmd);
-        if (preview) { previews.push(preview); }
+        if (preview) {
+          // Attach vault validation info
+          const vr = resultMap.get(cmd);
+          if (vr) {
+            preview.validationErrors = vr.errors;
+            preview.validationWarnings = vr.warnings;
+            preview.validationSuggestions = vr.suggestions;
+          }
+          previews.push(preview);
+        }
       } catch (err) {
         previews.push({
           file: cmd.file,
@@ -107,12 +138,14 @@ export class FileUpdater {
           before: '',
           after: cmd.content.slice(0, 500) + (cmd.content.length > 500 ? '\n...(truncated)' : ''),
           isNewFile: true,
+          unifiedDiff: this._miniUnifiedDiff(cmd.file, '', cmd.content),
         };
       }
 
       case 'ADD_DECISION': {
         const existing = await this._readFileSafe(fileUri);
         const block = `\n## ${cmd.decision_id} – ${cmd.title}\nStatus: ${cmd.status}\n\n${cmd.content}\n\nImpact: ${cmd.impact}\n`;
+        const afterContent = existing + '\n---' + block;
         return {
           file: cmd.file,
           command: cmd.command,
@@ -120,6 +153,7 @@ export class FileUpdater {
           before: this._tail(existing, 5),
           after: this._tail(existing, 3) + '\n---' + block,
           isNewFile: false,
+          unifiedDiff: this._miniUnifiedDiff(cmd.file, existing, afterContent),
         };
       }
 
@@ -132,6 +166,9 @@ export class FileUpdater {
           `(${escapedHeading}\\s*\\n)([\\s\\S]*?)(?=\\n${headingLevel} |\\n---\\s*$|$)`, 'm'
         );
         const match = existing.match(sectionRegex);
+        const afterContent = match
+          ? existing.replace(sectionRegex, `${sectionHeading}\n${cmd.content}\n`)
+          : existing;
         return {
           file: cmd.file,
           command: cmd.command,
@@ -139,10 +176,13 @@ export class FileUpdater {
           before: match ? match[0].slice(0, 300) : '(section not found)',
           after: `${sectionHeading}\n${cmd.content.slice(0, 300)}`,
           isNewFile: false,
+          unifiedDiff: match ? this._miniUnifiedDiff(cmd.file, existing, afterContent) : undefined,
         };
       }
 
       case 'APPEND_TO_FILE': {
+        const existing = await this._readFileSafe(fileUri);
+        const afterContent = existing + '\n' + cmd.content;
         return {
           file: cmd.file,
           command: cmd.command,
@@ -150,6 +190,7 @@ export class FileUpdater {
           before: '(...end of file)',
           after: cmd.content.slice(0, 300),
           isNewFile: false,
+          unifiedDiff: this._miniUnifiedDiff(cmd.file, existing, afterContent),
         };
       }
 
@@ -165,6 +206,10 @@ export class FileUpdater {
       }
 
       case 'UPDATE_YAML_METADATA': {
+        const existing = await this._readFileSafe(fileUri);
+        // Simulate the metadata update to produce a diff
+        const { updateYamlMetadata: simUpdate } = await import('./core/mutations.js');
+        const simResult = simUpdate(existing, cmd.fields);
         return {
           file: cmd.file,
           command: cmd.command,
@@ -172,12 +217,80 @@ export class FileUpdater {
           before: '(current front matter)',
           after: Object.entries(cmd.fields).map(([k, v]) => `${k}: ${v}`).join('\n'),
           isNewFile: false,
+          unifiedDiff: simResult.success ? this._miniUnifiedDiff(cmd.file, existing, simResult.content) : undefined,
         };
       }
 
       default:
         return null;
     }
+  }
+
+  /**
+   * Produce a minimal unified diff (context-style) between two strings.
+   * Shows only changed lines with 3 lines of context.
+   */
+  private _miniUnifiedDiff(fileName: string, before: string, after: string): string {
+    const aLines = before.split('\n');
+    const bLines = after.split('\n');
+    const contextSize = 3;
+    const diffLines: string[] = [`--- a/${fileName}`, `+++ b/${fileName}`];
+
+    // Simple line-by-line diff — find changed regions
+    const maxLen = Math.max(aLines.length, bLines.length);
+    let i = 0;
+    while (i < maxLen) {
+      if (i >= aLines.length || i >= bLines.length || aLines[i] !== bLines[i]) {
+        // Found a changed region — find extent
+        const start = i;
+        let endA = i;
+        let endB = i;
+        while (endA < aLines.length && endB < bLines.length && aLines[endA] !== bLines[endB]) {
+          endA++;
+          endB++;
+        }
+        // Also handle insertions/deletions (one side advances further)
+        if (endA >= aLines.length || endB >= bLines.length) {
+          endA = Math.min(start + 20, aLines.length);
+          endB = Math.min(start + 20, bLines.length);
+        }
+
+        const ctxStart = Math.max(0, start - contextSize);
+        const ctxEndA = Math.min(aLines.length, endA + contextSize);
+        const ctxEndB = Math.min(bLines.length, endB + contextSize);
+
+        diffLines.push(`@@ -${ctxStart + 1},${ctxEndA - ctxStart} +${ctxStart + 1},${ctxEndB - ctxStart} @@`);
+
+        // Context before
+        for (let c = ctxStart; c < start; c++) {
+          diffLines.push(` ${aLines[c] ?? ''}`);
+        }
+        // Removed lines
+        for (let c = start; c < endA; c++) {
+          diffLines.push(`-${aLines[c] ?? ''}`);
+        }
+        // Added lines
+        for (let c = start; c < endB; c++) {
+          diffLines.push(`+${bLines[c] ?? ''}`);
+        }
+        // Context after
+        for (let c = endA; c < ctxEndA; c++) {
+          diffLines.push(` ${aLines[c] ?? ''}`);
+        }
+
+        i = Math.max(endA, endB);
+      } else {
+        i++;
+      }
+
+      // Cap diff size
+      if (diffLines.length > 60) {
+        diffLines.push('... (diff truncated)');
+        break;
+      }
+    }
+
+    return diffLines.length > 2 ? diffLines.join('\n') : '';
   }
 
   private async _readFileSafe(fileUri: vscode.Uri): Promise<string> {

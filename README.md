@@ -71,9 +71,9 @@ flowchart LR
 2. **Ask** — Type `@architect /status` to see your vault's health dashboard
 3. **Analyze** — Use `/analyze` or `/todo` to find gaps, blockers, and priorities
 4. **Decide** — Run `/decide` for structured pros/cons on open decisions
-5. **Update** — Apply changes with `/update` — diff preview + confirmation + audit log
+5. **Update** — Apply changes with `/update` — unified diff preview + vault validation + confirmation + audit log
 6. **Export** — Generate ArchiMate XML, Draw.io diagrams, C4 models, or Gantt timelines
-7. **Govern** — Use `/review` and `/gate` for quality checks and phase gate assessments
+7. **Audit** — Use `/audit` for a unified vault health check (combines status + review + gate)
 
 ## Features
 
@@ -88,9 +88,10 @@ flowchart LR
 |---------|-------------|
 | `@architect` | Ask any architecture question (auto-mode) |
 | `@architect /analyze` | Architecture impact analysis (read-only) |
-| `@architect /decide` | Decision support with structured reasoning |
+| `@architect /decide` | Decision support — two-step: analysis first, then record |
 | `@architect /update` | Modify vault documents with governance |
 | `@architect /status` | Vault overview and decision status |
+| `@architect /audit` | Unified vault health check (status + review + gate) |
 | `@architect /switch` | Switch to a different vault folder |
 | `@architect /c4` | Generate C4 model diagrams (Mermaid) |
 | `@architect /sizing` | Capacity & cost sizing analysis |
@@ -124,11 +125,14 @@ A quick reference for every `@architect` command — print this or keep it open 
 |---------|-------------|:---:|
 | `@architect` | Free-form architecture Q&A | No |
 | `/analyze` | Impact analysis of a proposed change | No |
-| `/decide` | Structured pros/cons for an open decision | No |
+| `/decide` | Two-step decision support (analyze → record) | No |
 | `/status` | Vault health dashboard (maturity, risks, gaps) | No |
 | `/todo` | Prioritised TOGAF action items from the vault | No |
-| `/review` | Automated quality & completeness review | No |
-| `/gate <phase>` | Phase gate readiness checklist | No |
+| `/audit` | Unified audit — status + review + gate combined | No |
+| `/audit --quick` | Quick audit — status + review only | No |
+| `/audit --full` | Full audit — status + review + phase gate | No |
+| `/review` | Alias for `/audit --full` | No |
+| `/gate <phase>` | Alias for `/audit --full` | No |
 | `/impact <ID>` | Cross-vault impact chain for a TOGAF ID | No |
 | `/update <instruction>` | Modify vault files (with diff preview) | **Yes** |
 | `/adr <title>` | Record a new Architecture Decision | **Yes** |
@@ -144,7 +148,7 @@ A quick reference for every `@architect` command — print this or keep it open 
 | `/scan --append` | Enrich existing vault with source code signals (add without overwriting) | **Yes** |
 | `/switch` | Switch active vault | No |
 
-**Flags:** Append `--dry-run` or `--preview` to any `/update` command to preview changes without writing. Append `--no-analysis` to `/archimate`, `/drawio`, or `/todo` to skip AI commentary. Append `--append` to `/scan` to enrich an existing vault without creating a new one.
+**Flags:** Append `--dry-run` or `--preview` to any `/update` command to preview changes without writing. Append `--no-analysis` to `/archimate`, `/drawio`, or `/todo` to skip AI commentary. Append `--append` to `/scan` to enrich an existing vault without creating a new one. Append `--quick` or `--full` to `/audit` to control scope (quick = status + review, full = status + review + gate).
 
 ## Usage Examples
 
@@ -322,17 +326,24 @@ Assess the impact of a proposed change without modifying any file.
 @architect /analyze How does removing DEP-03 (Rule Engine) affect our scenarios?
 ```
 
-### `@architect /decide` — Decision Support
+### `@architect /decide` — Two-Step Decision Support
 
-Get structured pros/cons analysis and recommendations for open decisions.
+Decision support follows a **two-step flow**: first an analysis-only response with structured pros/cons, then — after your confirmation — the decision is recorded in the vault.
 
+**Step 1 — Analysis (no vault changes):**
 ```
-@architect /decide Help me resolve AD-01 — should we go with  Feature, Enterprise Service, or AI Platform?
+@architect /decide Help me resolve AD-01 — should we go with Feature, Enterprise Service, or AI Platform?
 @architect /decide We need to pick between Kafka and RabbitMQ for the event bus. What does the architecture suggest?
 @architect /decide Should we build or buy the Context Aggregation Engine?
-@architect /decide Evaluate self-hosted LLM vs cloud API given our data residency constraints
-@architect /decide Is MCP mature enough to adopt now, or should we wait?
 ```
+
+**Step 2 — Record (after reviewing the analysis, confirm to write):**
+```
+Yes, let's go with Option B
+Record this decision — Option A is the winner
+```
+
+The analysis step explicitly avoids generating any vault commands. Only after you confirm does archipilot emit an `ADD_DECISION` command with diff preview.
 
 ### `@architect /update` — Modify Vault Documents
 
@@ -453,7 +464,9 @@ Scan the workspace source code and automatically populate a TOGAF-aligned vault.
 2. Detects project name from `package.json`, `pyproject.toml`, etc.
 3. Creates a new TOGAF vault from the full 27-file template
 4. Calls the LLM to populate sections with real extracted information
-5. Shows a diff preview — apply with one click
+5. Shows a **review step** — extraction summary table with per-command validation, unified diffs, and error/warning indicators
+6. Commands with vault validation errors are automatically filtered out
+7. Apply valid commands with one click
 
 **Enrich an existing vault (append mode):**
 ```
@@ -474,7 +487,7 @@ Use this to add a second repo or microservice to an already-populated vault. Exi
 | `.env.example`, `config/*.yaml` | `E2_Integration_Strategy.md` — integration points |
 | Technology choices across files | `X1_ADR_Decision_Log.md` — auto-generated decisions |
 
-> 💡 `/scan` is the fastest way to bootstrap a TOGAF vault for an existing codebase. Run it once, then use `/review` to find gaps and `/update` to refine.
+> 💡 `/scan` is the fastest way to bootstrap a TOGAF vault for an existing codebase. Run it once, then use `/audit` to find gaps and `/update` to refine.
 
 ### Dry-Run Mode
 
@@ -484,6 +497,8 @@ Append `--dry-run` or `--preview` to any `/update` command to see what would cha
 @architect /update Add risk R-06: "Regulatory change" --dry-run
 @architect /update Mark AD-01 as decided: Option B --preview
 ```
+
+The preview now includes **unified diffs** (context-style `--- a/file` / `+++ b/file`) and **vault-aware validation** — the system checks file existence, section heading matches (with fuzzy suggestions for close matches), and duplicate detection before any write.
 
 ### Supported Architecture Commands
 
@@ -732,6 +747,7 @@ The `@architect` agent reads this metadata to understand document maturity and o
 |---------|---------|-------------|
 | `archipilot.vaultPath` | `""` | Path to the active vault folder (auto-detected if empty) |
 | `archipilot.projectsRoot` | `"architectures"` | Folder (relative to workspace root) where `/new` creates vaults and where discovery scans |
+| `archipilot.contextScoping` | `true` | When enabled, each command loads only the vault files relevant to its mode (e.g. `/c4` loads C1–D1, `/decide` loads X1+A1). Disable to always load the full vault. |
 | `archipilot.hiddenQuickActions` | `[]` | List of Quick Action labels or `/command` shortcuts to hide from the sidebar |
 
 ## Architecture
@@ -764,7 +780,8 @@ src/
 
 | Feature | Description |
 |---------|-------------|
-| **Diff preview** | Every `/update` shows a visual diff before applying changes |
+| **Diff preview** | Every `/update` shows a **unified diff** before applying changes |
+| **Vault validation** | Commands checked against vault: file existence, section match, fuzzy suggestions for close names |
 | **Confirmation dialog** | "Apply All" / "Cancel" modal before any write |
 | **Dry-run mode** | Append `--dry-run` or `--preview` to see changes without writing |
 | **File backup** | Pre-write copy saved to `.archipilot/backups/{name}.{timestamp}.md` |
@@ -797,7 +814,7 @@ This creates 27 template files covering all architecture domains. Don't worry ab
 ```
 @architect /todo     ← "What should I work on next?"
 @architect /status   ← "How complete is my architecture?"
-@architect /review   ← "Where are the quality gaps?"
+@architect /audit    ← "Where are the quality gaps?"
 ```
 
 ### 4. Evolve incrementally
@@ -816,24 +833,26 @@ archipilot includes a built-in **Getting Started walkthrough** inside VS Code:
 
 1. Open the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`)
 2. Type **"Get Started with archipilot"**
-3. Follow the 4 guided steps:
+3. Follow the 6 guided steps:
 
 | Step | What you'll learn |
 |------|-------------------|
-| **Create a Vault** | Scaffold your first TOGAF project with `/new` |
-| **Check Status** | Read the health dashboard with `/status` |
-| **Analyze Impact** | Ask what-if questions with `/analyze` |
-| **Update Vault** | Make governed changes with `/update` |
+| **Scan or Create** | Bootstrap a vault with `/scan` (from code) or `/new` (blank template) |
+| **Audit** | Run `/audit` for a unified health check (status + review + gate) |
+| **Analyze** | Ask what-if questions with `/analyze` |
+| **Decide** | Two-step decision flow — analyze first, then record with `/decide` |
+| **Update** | Make governed changes with `/update` (unified diffs + vault validation) |
+| **Diagrams & Exports** | Generate C4 models, ArchiMate XML, or Draw.io diagrams |
 
 ### Suggested Learning Path
 
 | Session | Goal | Commands to try |
 |---------|------|-----------------|
 | Day 1 | Bootstrap & explore | `/scan` (existing code) or `/new` (blank), `/status`, free-form questions |
-| Day 2 | Capture decisions | `/adr`, `/decide` |
+| Day 2 | Capture decisions | `/adr`, `/decide` (two-step: analyze → record) |
 | Day 3 | Impact & risk | `/analyze`, `/todo` |
 | Day 4 | Diagrams & exports | `/diagram`, `/graph`, `/c4` |
-| Day 5 | Governance | `/review`, `/gate`, `/update` |
+| Day 5 | Governance | `/audit`, `/update` |
 | Day 6 | Enterprise tooling | `/archimate`, `/drawio`, `/timeline`, `/scan --append` |
 
 > **Tip:** Each session takes 15–30 minutes. By the end of the week you'll have a working architecture repository.
@@ -881,8 +900,8 @@ A: A vault with just `A1_Architecture_Vision.md` and `X1_ADR_Decision_Log.md` is
 
 ### Using Commands
 
-**Q: What's the difference between `/analyze` and `/review`?**
-A: `/analyze` answers a specific what-if question ("What if we drop the API Gateway?"). `/review` performs a comprehensive quality and completeness assessment of the entire vault.
+**Q: What's the difference between `/analyze` and `/audit`?**
+A: `/analyze` answers a specific what-if question ("What if we drop the API Gateway?"). `/audit` performs a comprehensive health check of the entire vault — combining status dashboard, quality review, and phase gate assessment. Use `--quick` for status + review only, or `--full` for the complete check. (`/review` and `/gate` still work as aliases.)
 
 **Q: Can I undo a `/update`?**
 A: Yes. Every write creates a backup in `.archipilot/backups/` with a timestamp. You can also use `--dry-run` to preview before applying. The audit log (`.archipilot/audit.log`) records every mutation.
@@ -910,7 +929,7 @@ A: Not directly. Export to Draw.io (`.drawio`) and then use Draw.io's built-in P
 A: Yes — the vault is just a folder of Markdown files. Use Git for version control, branches, and merge. The YAML front matter tracks `last_modified` and `owner` for coordination.
 
 **Q: How do I archive a completed architecture?**
-A: Set all document statuses to `approved`, run `/review` for a final quality check, then commit the vault to Git with a release tag. You can keep it in the workspace as a read-only reference.
+A: Set all document statuses to `approved`, run `/audit --full` for a final quality check, then commit the vault to Git with a release tag. You can keep it in the workspace as a read-only reference.
 
 **Q: What happens if I rename or move vault files?**
 A: WikiLinks will break. Run `/todo` or check the Architecture Health sidebar — it detects broken links. Use `/update` to fix cross-references after renaming.

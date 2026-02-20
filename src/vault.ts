@@ -8,6 +8,8 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { VaultFile, VaultInfo } from './types.js';
 import { buildContext as coreBuildContext } from './core/context.js';
+import { extractYamlSummary, formatYamlSummaryTable } from './core/context.js';
+import type { YamlMeta } from './core/context.js';
 
 export class VaultManager {
   private _activeVaultPath: string | undefined;
@@ -26,6 +28,11 @@ export class VaultManager {
   /** Current active vault path */
   get activeVaultPath(): string | undefined {
     return this._activeVaultPath;
+  }
+
+  /** Cached vault files (read-only access for validation, etc.) */
+  get cachedFiles(): VaultFile[] {
+    return this._cachedFiles;
   }
 
   /**
@@ -256,9 +263,30 @@ export class VaultManager {
    *
    * @param maxChars Approximate character budget (default ~120K ≈ ~30K tokens)
    * @param priorityFiles File name patterns to always include in full
+   * @param mode Optional command mode — scopes which files are included
    */
-  buildContext(maxChars: number = 120_000, priorityFiles?: string[]): string {
-    return coreBuildContext(this._cachedFiles, maxChars, priorityFiles);
+  buildContext(maxChars: number = 120_000, priorityFiles?: string[], mode?: import('./core/context.js').ContextMode): string {
+    // Respect user setting: when contextScoping is disabled, ignore mode
+    const cfg = vscode.workspace.getConfiguration('archipilot');
+    const scopingEnabled = cfg.get<boolean>('contextScoping', true);
+    const effectiveMode = scopingEnabled ? mode : undefined;
+    return coreBuildContext(this._cachedFiles, maxChars, priorityFiles, effectiveMode);
+  }
+
+  /**
+   * Pre-process YAML front matter from all vault files into structured data.
+   * Returns a markdown table suitable for injection into LLM prompts.
+   */
+  getYamlSummaryTable(): string {
+    const metas = extractYamlSummary(this._cachedFiles);
+    return formatYamlSummaryTable(metas);
+  }
+
+  /**
+   * Get structured YAML metadata for all vault files.
+   */
+  getYamlSummary(): YamlMeta[] {
+    return extractYamlSummary(this._cachedFiles);
   }
 
   /**
