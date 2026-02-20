@@ -67,12 +67,13 @@ flowchart LR
 ```
 
 **Typical workflow:**
-1. **Ask** — Type `@architect /status` to see your vault's health dashboard
-2. **Analyze** — Use `/analyze` or `/todo` to find gaps, blockers, and priorities
-3. **Decide** — Run `/decide` for structured pros/cons on open decisions
-4. **Update** — Apply changes with `/update` — diff preview + confirmation + audit log
-5. **Export** — Generate ArchiMate XML, Draw.io diagrams, C4 models, or Gantt timelines
-6. **Govern** — Use `/review` and `/gate` for quality checks and phase gate assessments
+1. **Bootstrap** — Type `@architect /scan` to generate a TOGAF vault from your source code, or `/new` to start from a blank template
+2. **Ask** — Type `@architect /status` to see your vault's health dashboard
+3. **Analyze** — Use `/analyze` or `/todo` to find gaps, blockers, and priorities
+4. **Decide** — Run `/decide` for structured pros/cons on open decisions
+5. **Update** — Apply changes with `/update` — diff preview + confirmation + audit log
+6. **Export** — Generate ArchiMate XML, Draw.io diagrams, C4 models, or Gantt timelines
+7. **Govern** — Use `/review` and `/gate` for quality checks and phase gate assessments
 
 ## Features
 
@@ -101,6 +102,8 @@ flowchart LR
 | `@architect /diagram` | Generate a Mermaid context diagram for the active file |
 | `@architect /graph` | Visualize the full vault as a dependency graph |
 | `@architect /new` | Scaffold a new empty TOGAF vault |
+| `@architect /scan` | Generate a TOGAF vault by scanning workspace source code |
+| `@architect /scan --append` | Enrich an existing vault with signals from source code |
 
 ### Palette Commands
 
@@ -137,9 +140,11 @@ A quick reference for every `@architect` command — print this or keep it open 
 | `/archimate` | Export to ArchiMate 3.2 XML | **Yes** |
 | `/drawio` | Export to Draw.io (As-Is / Target / Migration) | **Yes** |
 | `/new <name>` | Scaffold a new TOGAF vault | **Yes** |
+| `/scan` | Generate vault content by scanning workspace source code | **Yes** |
+| `/scan --append` | Enrich existing vault with source code signals (add without overwriting) | **Yes** |
 | `/switch` | Switch active vault | No |
 
-**Flags:** Append `--dry-run` or `--preview` to any `/update` command to preview changes without writing. Append `--no-analysis` to `/archimate`, `/drawio`, or `/todo` to skip AI commentary.
+**Flags:** Append `--dry-run` or `--preview` to any `/update` command to preview changes without writing. Append `--no-analysis` to `/archimate`, `/drawio`, or `/todo` to skip AI commentary. Append `--append` to `/scan` to enrich an existing vault without creating a new one.
 
 ## Usage Examples
 
@@ -436,6 +441,41 @@ Create a fresh TOGAF-aligned vault with all 27 template files.
 @architect /new Scaffold a project for the Customer-360 initiative
 ```
 
+### `@architect /scan` — Generate Vault from Source Code
+
+Scan the workspace source code and automatically populate a TOGAF-aligned vault. Detects tech stack, data models, services, infrastructure, API specs, and README content — then maps each signal to the correct TOGAF artifact (D2 standards catalog, C1 application components, C2 data entities, etc.).
+
+**Generate a new vault from scratch:**
+```
+@architect /scan
+```
+1. Scans workspace for package files, models, services, infrastructure, API specs
+2. Detects project name from `package.json`, `pyproject.toml`, etc.
+3. Creates a new TOGAF vault from the full 27-file template
+4. Calls the LLM to populate sections with real extracted information
+5. Shows a diff preview — apply with one click
+
+**Enrich an existing vault (append mode):**
+```
+@architect /scan --append
+```
+Use this to add a second repo or microservice to an already-populated vault. Existing approved content is never overwritten — only new information is added.
+
+**What gets extracted:**
+
+| Source Signal | TOGAF Artifact Populated |
+|---|---|
+| `package.json`, `requirements.txt`, `pom.xml` | `D2_Technology_Standards_Catalog.md` — tech stack with versions |
+| `openapi.yaml`, `swagger.json` | `B2_Business_Capability_Catalog.md`, `C1_Application_Architecture.md` |
+| `models/`, `*.prisma`, `migrations/` | `C2_Data_Architecture.md` — entities and data flows |
+| `services/`, `controllers/`, `routes/` | `C1_Application_Architecture.md` — components and interactions |
+| `Dockerfile`, `docker-compose`, `*.tf` | `D1_Technology_Architecture.md` — deployment topology |
+| `README.md`, `ARCHITECTURE.md` | `A1_Architecture_Vision.md` — executive summary and scope |
+| `.env.example`, `config/*.yaml` | `E2_Integration_Strategy.md` — integration points |
+| Technology choices across files | `X1_ADR_Decision_Log.md` — auto-generated decisions |
+
+> 💡 `/scan` is the fastest way to bootstrap a TOGAF vault for an existing codebase. Run it once, then use `/review` to find gaps and `/update` to refine.
+
 ### Dry-Run Mode
 
 Append `--dry-run` or `--preview` to any `/update` command to see what would change without writing anything to disk:
@@ -706,6 +746,7 @@ src/
   prompts.ts          – TOGAF system prompts per mode
   updater.ts          – Diff preview, file editor, audit log & backup
   vault-template.ts   – TOGAF vault scaffolding (27 template files)
+  source-scanner.ts   – Workspace scanner for /scan (file discovery & content extraction)
   types.ts            – TypeScript interfaces
   core/               – Pure logic (zero vscode imports)
     archimate-exporter.ts – ArchiMate 3.2 Open Exchange XML generator
@@ -746,6 +787,7 @@ This creates 27 template files covering all architecture domains. Don't worry ab
 ### 2. Start with what you know
 
 - **Business goals?** → Edit `A1_Architecture_Vision.md` — write your project scope and drivers in plain English
+- **Existing codebase?** → Type `@architect /scan` — scans your source and populates the vault automatically
 - **Applications / systems?** → Edit `C1_Application_Architecture.md` — list the systems involved
 - **Decisions to make?** → Type `@architect /adr Should we use Kafka or RabbitMQ?`
 - **Risks?** → Edit `X2_Risk_Issue_Register.md` — add rows to the table
@@ -787,12 +829,12 @@ archipilot includes a built-in **Getting Started walkthrough** inside VS Code:
 
 | Session | Goal | Commands to try |
 |---------|------|-----------------|
-| Day 1 | Set up & explore | `/new`, `/status`, free-form questions |
+| Day 1 | Bootstrap & explore | `/scan` (existing code) or `/new` (blank), `/status`, free-form questions |
 | Day 2 | Capture decisions | `/adr`, `/decide` |
 | Day 3 | Impact & risk | `/analyze`, `/todo` |
 | Day 4 | Diagrams & exports | `/diagram`, `/graph`, `/c4` |
 | Day 5 | Governance | `/review`, `/gate`, `/update` |
-| Day 6 | Enterprise tooling | `/archimate`, `/drawio`, `/timeline` |
+| Day 6 | Enterprise tooling | `/archimate`, `/drawio`, `/timeline`, `/scan --append` |
 
 > **Tip:** Each session takes 15–30 minutes. By the end of the week you'll have a working architecture repository.
 

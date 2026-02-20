@@ -4,6 +4,29 @@ Get productive with archipilot in 5 minutes — no TOGAF knowledge required.
 
 ---
 
+## Option A: I Have Existing Source Code (Recommended)
+
+If you already have a codebase open in VS Code, the fastest way to get a TOGAF vault is:
+
+```
+@architect /scan
+```
+
+This scans your workspace for package files, data models, services, infrastructure configs, API specs, and READMEs — then generates a TOGAF vault populated with real information from your code.
+
+**What to do after `/scan`:**
+```
+@architect /status   ← see what was detected and what’s still missing
+@architect /review   ← quality check the auto-generated content
+@architect /todo     ← prioritised list of what to fill in next
+```
+
+> 💡 The scanner cannot infer business context (goals, stakeholders, value proposition) from code alone. After scanning, use `@architect /update` to add that layer.
+
+---
+
+## Option B: Starting from Scratch
+
 ## 1. Scaffold a Vault
 
 Open Copilot Chat and type:
@@ -20,6 +43,7 @@ You don't need to fill every file. Start with what makes sense:
 
 | You know about... | Edit this file |
 |-------------------|---------------|
+| Existing source code | Run `@architect /scan` — vault auto-populated from code |
 | Business goals | `A1_Architecture_Vision.md` — write your project scope and drivers in plain English |
 | Applications / systems | `C1_Application_Architecture.md` — list the systems involved |
 | Decisions to make | Type `@architect /adr Should we use Kafka or RabbitMQ?` |
@@ -50,12 +74,12 @@ Think of the vault as a **structured notebook** for your architecture:
 
 | Day | Goal | Commands |
 |-----|------|----------|
-| 1 | Setup & explore | `/new`, `/status`, free-form questions |
+| 1 | Bootstrap | `/scan` (existing code) or `/new` (blank), `/status`, free-form questions |
 | 2 | Capture decisions | `/adr`, `/decide` |
 | 3 | Impact & risk | `/analyze`, `/todo` |
 | 4 | Diagrams & exports | `/diagram`, `/graph`, `/c4` |
 | 5 | Governance | `/review`, `/gate`, `/update` |
-| 6 | Enterprise tooling | `/archimate`, `/drawio`, `/timeline` |
+| 6 | Enterprise tooling | `/archimate`, `/drawio`, `/timeline`, `/scan --append` |
 
 > Each session takes 15–30 minutes. By the end of the week you'll have a working architecture repository.
 

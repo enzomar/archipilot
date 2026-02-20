@@ -20,7 +20,9 @@ import {
   buildTodoPrompt,
   buildReviewPrompt,
   buildGatePrompt,
+  buildScanPrompt,
 } from './prompts.js';
+import { scanWorkspaceFiles, formatScanContext } from './source-scanner.js';
 import {
   exportToArchimate,
   extractModel,
@@ -152,6 +154,11 @@ export class ArchitectParticipant {
     // ── Handle /gate command ──
     if (request.command === 'gate') {
       return this._handleGate(request, chatContext, stream, token);
+    }
+
+    // ── Handle /scan command ──
+    if (request.command === 'scan') {
+      return this._handleScan(request, stream, token);
     }
 
     // ── Ensure vault is loaded ──
@@ -1469,6 +1476,279 @@ export class ArchitectParticipant {
         ).join('\n') +
       '\n\n---\n\n' +
       '_Use `@architect /decide` or `@architect /update` to act on any of these references._'
+    );
+
+    return {};
+  }
+
+  /**
+   * Handle /scan – generate or enrich a TOGAF vault by scanning workspace source code.
+   *
+   * Flags:
+   *   --append   : append/update an existing vault instead of creating a new one
+   *
+   * Usage:
+   *   @architect /scan                 → create a new vault populated from source code
+   *   @architect /scan --append        → enrich the active vault from the current workspace
+   */
+  private async _handleScan(
+    request: vscode.ChatRequest,
+    stream: vscode.ChatResponseStream,
+    token: vscode.CancellationToken
+  ): Promise<vscode.ChatResult> {
+    const isAppendMode =
+      /--append\b/i.test(request.prompt) || !!this._vaultManager.activeVaultPath;
+
+    // ── Step 1: Determine workspace root to scan ─────────────────────────
+    const workspaceRoot =
+      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '';
+
+    if (!workspaceRoot) {
+      stream.markdown(
+        '⚠️ **No workspace folder open.**\n\n' +
+          'Open a project folder first, then run `/scan` again.'
+      );
+      return {};
+    }
+
+    // ── Step 2: Scan workspace for architectural signals ─────────────────
+    stream.progress(`Scanning workspace: ${workspaceRoot.split('/').pop()}...`);
+    const scan = await scanWorkspaceFiles(workspaceRoot);
+
+    if (scan.totalFilesScanned === 0) {
+      stream.markdown(
+        '⚠️ **No source files found.**\n\n' +
+          'The workspace appears empty or all files are excluded. ' +
+          'Make sure the folder contains source code (package.json, models, services, etc.).'
+      );
+      return {};
+    }
+
+    stream.markdown(
+      `🔍 **Scan complete** — found **${scan.totalFilesScanned} file(s)** across architectural layers:\n\n` +
+        (scan.packageFiles.length > 0
+          ? `- 📦 **Technology:** ${scan.packageFiles.map((f) => f.relativePath).join(', ')}\n`
+          : '') +
+        (scan.apiSpecFiles.length > 0
+          ? `- 📋 **API Specs:** ${scan.apiSpecFiles.map((f) => f.relativePath).join(', ')}\n`
+          : '') +
+        (scan.modelFiles.length > 0
+          ? `- 🗄️ **Data Models:** ${scan.modelFiles.length} file(s)\n`
+          : '') +
+        (scan.serviceFiles.length > 0
+          ? `- ⚙️ **Services/Controllers:** ${scan.serviceFiles.length} file(s)\n`
+          : '') +
+        (scan.infraFiles.length > 0
+          ? `- 🐳 **Infrastructure:** ${scan.infraFiles.length} file(s)\n`
+          : '') +
+        (scan.readmeFiles.length > 0
+          ? `- 📄 **Documentation:** ${scan.readmeFiles.map((f) => f.relativePath).join(', ')}\n`
+          : '') +
+        `\n**Project name detected:** \`${scan.projectName}\`\n\n`
+    );
+
+    // ── Step 3: Ensure vault exists (create from template if new) ────────
+    let vaultInfo: Awaited<ReturnType<typeof this._vaultManager.loadVault>>;
+    let existingVaultContext: string | null = null;
+
+    if (isAppendMode) {
+      // Append to existing vault
+      try {
+        await this._ensureVault(stream);
+      } catch {
+        stream.markdown(
+          '⚠️ **No architecture vault found for append.**\n\n' +
+            'Use `/scan` (without `--append`) to create a new vault, or `/switch` to select one.'
+        );
+        return {};
+      }
+      stream.progress('Loading existing vault context...');
+      vaultInfo = await this._vaultManager.loadVault();
+      existingVaultContext = this._vaultManager.buildContext();
+      stream.markdown(
+        `📂 **Appending to vault:** \`${vaultInfo.name}\` (${vaultInfo.fileCount} files)\n\n`
+      );
+    } else {
+      // Create a new vault from template, then populate it
+      const safeName = scan.projectName
+        .replace(/[^a-zA-Z0-9_\- ]/g, '')
+        .replace(/\s+/g, '-');
+
+      let parentPath: string | undefined =
+        await this._vaultManager.getProjectsRoot();
+
+      if (!parentPath) {
+        const folderUri = await vscode.window.showOpenDialog({
+          canSelectFolders: true,
+          canSelectFiles: false,
+          canSelectMany: false,
+          openLabel: 'Select parent folder for the new vault',
+          title: 'Where to create the TOGAF vault?',
+        });
+        if (!folderUri || folderUri.length === 0) {
+          stream.markdown('ℹ️ No folder selected. Operation cancelled.');
+          return {};
+        }
+        parentPath = folderUri[0].fsPath;
+      }
+
+      const vaultUri = vscode.Uri.file(`${parentPath}/${safeName}`);
+      stream.progress(`Creating TOGAF vault "${safeName}" from template...`);
+
+      const { buildVaultTemplate } = await import('./vault-template.js');
+      const templateFiles = buildVaultTemplate(scan.projectName);
+      await vscode.workspace.fs.createDirectory(vaultUri);
+      for (const file of templateFiles) {
+        await vscode.workspace.fs.writeFile(
+          vscode.Uri.joinPath(vaultUri, file.name),
+          Buffer.from(file.content, 'utf-8')
+        );
+      }
+
+      await this._vaultManager.setActiveVault(vaultUri.fsPath);
+      vaultInfo = await this._vaultManager.loadVault();
+      stream.markdown(
+        `✅ **Vault created:** \`${safeName}\` (${templateFiles.length} TOGAF template files)\n\n` +
+          `📁 Path: \`${vaultUri.fsPath}\`\n\n` +
+          `⏳ **Now populating vault from source code scan...**\n\n`
+      );
+    }
+
+    // ── Step 4: Build LLM prompt with scan context ───────────────────────
+    const scanContext = formatScanContext(scan);
+    const systemPrompt = buildScanPrompt(
+      scanContext,
+      existingVaultContext,
+      scan.projectName,
+      isAppendMode
+    );
+
+    const messages: vscode.LanguageModelChatMessage[] = [
+      vscode.LanguageModelChatMessage.User(systemPrompt),
+    ];
+
+    const userInstruction =
+      request.prompt.replace(/--append\b/gi, '').trim() ||
+      (isAppendMode
+        ? `Enrich the vault for project "${scan.projectName}" using the source code scan. Focus on adding new information not yet in the vault.`
+        : `Generate TOGAF vault content for project "${scan.projectName}" from the source code scan. Populate as many sections as the scan data supports.`);
+
+    messages.push(vscode.LanguageModelChatMessage.Assistant('(ready)'));
+    messages.push(vscode.LanguageModelChatMessage.User(userInstruction));
+
+    // ── Step 5: Stream LLM response ──────────────────────────────────────
+    stream.progress('Analyzing source code with AI...');
+    stream.markdown(`---\n\n### 🧠 AI Analysis & Generated Update Commands\n\n`);
+
+    let fullResponse = '';
+    try {
+      const chatResponse = await request.model.sendRequest(messages, {}, token);
+      for await (const fragment of chatResponse.text) {
+        stream.markdown(fragment);
+        fullResponse += fragment;
+      }
+    } catch (err) {
+      if (err instanceof vscode.LanguageModelError) {
+        stream.markdown(`\n\n⚠️ **LLM Error:** ${err.message}`);
+      } else {
+        throw err;
+      }
+      return {};
+    }
+
+    // ── Step 6: Parse, validate, preview and apply commands ─────────────
+    const commands = this._fileUpdater.parseCommands(fullResponse);
+    if (commands.length === 0) {
+      stream.markdown(
+        '\n\n---\n\n⚠️ **No update commands detected** in the AI response.\n\n' +
+          'Try adding more source files (models, services, API specs) to the workspace and run `/scan` again.'
+      );
+      return {};
+    }
+
+    stream.markdown('\n\n---\n\n');
+
+    // Validate
+    const validationErrors = this._fileUpdater.validateCommands(commands);
+    if (validationErrors.length > 0) {
+      stream.markdown(
+        `⚠️ **Validation failed for ${validationErrors.length} command(s):**\n\n`
+      );
+      for (const ve of validationErrors) {
+        stream.markdown(
+          `- \`${ve.command.command}\` on \`${ve.command.file}\`: ${ve.errors.join('; ')}\n`
+        );
+      }
+      stream.markdown('\n> Commands with errors were skipped.\n\n');
+    }
+
+    const invalidSet = new Set(
+      validationErrors.map((ve) => JSON.stringify(ve.command))
+    );
+    const validCommands = commands.filter(
+      (cmd) => !invalidSet.has(JSON.stringify(cmd))
+    );
+
+    if (validCommands.length === 0) {
+      stream.markdown('❌ No valid commands to apply after validation.\n');
+      return {};
+    }
+
+    // Preview
+    const previews = await this._fileUpdater.previewCommands(validCommands);
+    stream.markdown(
+      `📋 **${previews.length} proposed change(s) to vault \`${vaultInfo.name}\`:**\n\n`
+    );
+    for (const preview of previews) {
+      stream.markdown(
+        `### ${preview.isNewFile ? '🆕' : '✏️'} \`${preview.command}\` → \`${preview.file}\`\n`
+      );
+      stream.markdown(`${preview.summary}\n\n`);
+      if (preview.before) {
+        stream.markdown(`**Before:**\n\`\`\`\n${preview.before}\n\`\`\`\n`);
+      }
+      stream.markdown(`**After:**\n\`\`\`\n${preview.after}\n\`\`\`\n\n`);
+    }
+
+    // Confirm
+    const confirm = await vscode.window.showWarningMessage(
+      `archipilot: Apply ${validCommands.length} change(s) to vault "${vaultInfo.name}"?`,
+      { modal: true, detail: previews.map((p) => `• ${p.summary}`).join('\n') },
+      'Apply All',
+      'Cancel'
+    );
+
+    if (confirm !== 'Apply All') {
+      stream.markdown('\n> ℹ️ **Changes cancelled** — no files were modified.\n');
+      return {};
+    }
+
+    // Apply
+    stream.markdown('\n**Applying changes...**\n\n');
+    const promptHash = this._hashString(
+      request.prompt + scanContext.slice(0, 100)
+    );
+    const results = await this._fileUpdater.applyCommands(validCommands, promptHash);
+    for (const result of results) {
+      if (result.success) {
+        stream.markdown(`✅ ${result.message}\n\n`);
+      } else {
+        stream.markdown(`❌ ${result.message}\n\n`);
+      }
+    }
+
+    // Refresh sidebar
+    await this._vaultManager.loadVault();
+    vscode.commands.executeCommand('archipilot.refreshSidebar');
+
+    stream.markdown(
+      `\n---\n\n✅ **Vault ${isAppendMode ? 'enriched' : 'generated'} from source code scan.**\n\n` +
+        `Next steps:\n` +
+        `- \`/status\` — review vault completeness\n` +
+        `- \`/review\` — automated TOGAF quality check\n` +
+        `- \`/scan --append\` — add another service or repo to this vault\n` +
+        `- \`/update\` — refine any generated content\n\n` +
+        `> 💡 Use \`Ctrl+Z\` / \`Cmd+Z\` in each file to undo changes.`
     );
 
     return {};

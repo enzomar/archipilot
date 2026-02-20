@@ -38,7 +38,7 @@ Ask questions, record decisions, assess risks, generate diagrams, and export to 
 |------|-------------|
 | [[Commands-Overview]] | Full cheat sheet of all `@architect` commands |
 | [[Query-Commands]] | Read-only commands: `/status`, `/analyze`, `/decide`, `/review`, `/todo`, `/gate` |
-| [[Mutation-Commands]] | File-modifying commands: `/update`, `/adr`, `/diagram`, `/graph`, `/new` |
+| [[Mutation-Commands]] | File-modifying commands: `/update`, `/adr`, `/diagram`, `/graph`, `/new`, `/scan` |
 | [[Export-Commands]] | Export tools: `/archimate`, `/drawio`, `/c4`, `/timeline`, `/sizing` |
 | [[Palette-Commands]] | Command Palette actions (no chat required) |
 
@@ -92,7 +92,15 @@ Ask questions, record decisions, assess risks, generate diagrams, and export to 
 
 ## 🚀 Quick Start
 
-### 1. Install
+### 0. Already have a codebase? Bootstrap from source code
+
+```
+@architect /scan
+```
+
+Scans your workspace and generates a populated TOGAF vault automatically.
+
+### 1. Or scaffold a blank vault
 
 Search for **"archipilot"** in the VS Code Extensions panel, or:
 

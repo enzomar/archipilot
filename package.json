@@ -147,6 +147,10 @@
           {
             "name": "gate",
             "description": "Phase gate checklist — evaluate whether a TOGAF ADM phase is ready to proceed"
+          },
+          {
+            "name": "scan",
+            "description": "Generate or enrich a TOGAF vault by scanning workspace source code. Use --append to add to an existing vault."
           }
         ]
       }
@@ -316,7 +320,9 @@
     "package": "node esbuild.mjs --production",
     "typecheck": "tsc -p ./ --noEmit",
     "lint": "eslint src/",
-    "test": "node --import tsx --test src/test/*.test.ts"
+    "test": "node --import tsx --test src/test/*.test.ts",
+    "deploy:wiki": "bash scripts/deploy-wiki.sh",
+    "deploy:pages": "bash scripts/deploy-gh-pages.sh"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

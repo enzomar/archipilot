@@ -513,6 +513,125 @@ ${vaultContext}
 `;
 }
 
+/** SCAN MODE – generate or enrich vault from source code */
+export function buildScanPrompt(
+  scanContext: string,
+  existingVaultContext: string | null,
+  projectName: string,
+  isAppendMode: boolean
+): string {
+  const mode = isAppendMode ? 'ENRICH (APPEND)' : 'GENERATE';
+  const taskVerb = isAppendMode
+    ? 'enrich the existing vault by adding and updating content — never delete or contradict existing approved decisions'
+    : 'populate the freshly created TOGAF vault with real information extracted from the source code';
+
+  const existingVaultSection = existingVaultContext
+    ? `\n<existing_vault>\n${existingVaultContext}\n</existing_vault>\n`
+    : '';
+
+  return `${CORE_IDENTITY}
+MODE: VAULT ${mode} FROM SOURCE CODE
+PROJECT: ${projectName}
+
+YOUR TASK:
+Analyze the scanned source code below and output structured UPDATE commands to ${taskVerb}.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TOGAF ARTIFACT → SOURCE CODE SIGNAL MAPPING (use as your guide):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A1_Architecture_Vision.md
+  Sections: ## Initiative Name | ## Executive Summary | ## Business Context & Drivers
+            ## Scope | ## Objectives | ## Value Proposition | ## Key Constraints
+  Signals:  README description, package.json description, OpenAPI info block
+
+A2_Stakeholder_Map.md
+  Sections: ## Stakeholder Catalog | ## RACI Matrix | ## Communication Plan
+  Signals:  README authors/contact, package.json author, CI/CD pipeline owners,
+            OpenAPI contact/license sections
+
+B1_Business_Architecture.md
+  Sections: ## Baseline Business Architecture | ## Target Business Architecture | ## Gap Analysis
+  Signals:  Controller names, service names, use-case names, README workflow descriptions
+
+B2_Business_Capability_Catalog.md
+  Sections: The capability table (ID | Capability | Level | Maturity | ...)
+  Signals:  Service class names, controller groups, API tag groupings in OpenAPI spec
+
+B3_Business_Scenarios.md
+  Sections: scenario blocks with Trigger/Actor/Pre-conditions/Post-conditions
+  Signals:  Named API endpoints (POST /orders, GET /users), use-case class names
+
+C1_Application_Architecture.md
+  Sections: ## Baseline Application Landscape | ## Target Application Architecture | ## Logical Components
+  Signals:  Service files, controller files, module structure, microservice names,
+            docker-compose service definitions
+
+C2_Data_Architecture.md
+  Sections: ## Data Entity Catalog | ## Data Flow Diagram | ## Data Governance
+  Signals:  ORM model files, Prisma schemas, SQL migrations, TypeScript interfaces/DTOs
+
+C3_Application_Portfolio_Catalog.md
+  Sections: The portfolio table (ID | Application | Type | Status | Disposition | ...)
+  Signals:  docker-compose services, package.json name, service directories
+
+D1_Technology_Architecture.md
+  Sections: ## Baseline Technology Landscape | ## Target Technology Architecture | ## Platform Components
+  Signals:  Dockerfile base images, Kubernetes manifests, Terraform resources,
+            docker-compose configs, CI/CD workflow configs
+
+D2_Technology_Standards_Catalog.md
+  Sections: The standards table (Category | Standard | Status | Version | ...)
+  Signals:  package.json dependencies with versions, requirements.txt, pom.xml deps,
+            language version in .github/workflows, Dockerfile base image tags
+
+E2_Integration_Strategy.md (if exists)
+  Sections: ## Integration Points | ## External Systems
+  Signals:  HTTP client imports, SDK package names, .env.example keys, OpenAPI external servers
+
+R1_Architecture_Requirements.md
+  Sections: ## Functional Requirements | ## Non-Functional Requirements
+  Signals:  README objectives/features lists, OpenAPI endpoint descriptions
+
+X1_ADR_Decision_Log.md
+  Signals:  Clearly observable technology choices (e.g., "use PostgreSQL", "use React",
+            "choose Kubernetes over bare Docker") — add as Approved decisions with
+            evidence from source files
+
+X2_Risk_Issue_Register.md
+  Sections: Risks table
+  Signals:  TODO/FIXME/HACK comments in code, known deprecated dependencies,
+            missing authentication patterns, no HTTPS, hardcoded credentials
+
+X3_Open_Questions.md
+  Signals:  Ambiguous patterns, multiple competing frameworks, missing config values,
+            TODO comments that reveal architectural uncertainty
+
+P1_Architecture_Principles.md
+  Sections: The principles table
+  Signals:  Consistent patterns in codebase (API-first if OpenAPI present,
+            containerized if Docker present, IaC if Terraform present, etc.)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OUTPUT RULES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Output ONLY valid UPDATE_SECTION, CREATE_FILE, and ADD_DECISION commands wrapped in \`\`\`json fences.
+2. Before each command block, write 1-2 lines explaining what you extracted and why.
+3. Use REAL names, versions, and details from the source — never use placeholders like "Component 1" or "TBD" where real data is available.
+4. For UPDATE_SECTION, use the EXACT section heading text (e.g. "## Target Technology Architecture") — case and punctuation must match.
+5. For the D2 technology standards table: populate each row with package name, detected version, and "Approved" status.
+6. For X1 decision log ADD_DECISION commands: use decision_id "AD-XX" (increment from existing if in append mode).
+7. Maximum 15 commands total — focus on the most information-rich sections.
+8. ${isAppendMode ? 'APPEND MODE: Complement existing content — do not overwrite sections that already have real content. Add new rows to tables or new subsections.' : 'GENERATE MODE: Replace placeholder content with real information from the source scan.'}
+9. Skip sections where the source scan provides no relevant signals.
+10. For Mermaid diagrams (C1, D1), generate a \`\`\`mermaid\`\`\` block inside the section content showing real components/services from the scan.
+${existingVaultSection}
+<source_code_scan>
+${scanContext}
+</source_code_scan>
+`;
+}
+
 /** GATE MODE – phase gate checklist assessment */
 export function buildGatePrompt(vaultContext: string): string {
   return `${CORE_IDENTITY}

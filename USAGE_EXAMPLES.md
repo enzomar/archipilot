@@ -6,6 +6,13 @@ Practical examples for every command, organized by workflow. Copy-paste these in
 
 ## Quick Start (First 5 Minutes)
 
+**If you have an existing codebase (recommended for most users):**
+```
+@architect /scan
+```
+This scans your workspace and generates a populated TOGAF vault automatically.
+
+**If you're starting from scratch:**
 ```
 @architect /new Payment-Platform-Architecture
 @architect /status
@@ -305,6 +312,46 @@ Scans every file and section for references to the given ID, showing the full im
 
 Creates 27 TOGAF ADM-aligned template files with YAML front matter.
 
+### `/scan` — Generate Vault from Source Code
+
+Bootstrap a TOGAF vault — or enrich an existing one — by scanning the workspace source code.
+
+**First-time: generate a new vault from code:**
+```
+@architect /scan
+```
+
+**Add a second repo or microservice to an existing vault:**
+```
+@architect /scan --append
+```
+
+**What the scanner finds:**
+
+| Source Files | TOGAF Artifact Generated |
+|---|---|
+| `package.json`, `requirements.txt`, `pom.xml`, `Cargo.toml` | `D2_Technology_Standards_Catalog.md` |
+| `openapi*.yaml`, `swagger*.json` | `B2_Business_Capability_Catalog.md`, `C1_Application_Architecture.md` |
+| `models/`, `entities/`, `*.prisma`, `migrations/` | `C2_Data_Architecture.md` |
+| `services/`, `controllers/`, `routes/`, `handlers/` | `C1_Application_Architecture.md` |
+| `Dockerfile`, `docker-compose.*`, `*.tf`, `k8s/` | `D1_Technology_Architecture.md` |
+| `README.md`, `ARCHITECTURE.md` | `A1_Architecture_Vision.md` |
+| `.env.example`, `config/*.yaml` | `E2_Integration_Strategy.md` |
+| Technology choices (observable patterns) | `X1_ADR_Decision_Log.md` (auto-decisions) |
+
+**Combined with other commands:**
+```
+# Run after /scan to check what was missed
+@architect /review
+
+# Refine auto-generated content
+@architect /update Update A1_Architecture_Vision executive summary with our actual business drivers
+
+# Add a microservice vault from a second repo
+@architect /switch   # switch to repo B vault
+@architect /scan --append
+```
+
 ---
 
 ## Sidebar Features
@@ -354,6 +401,20 @@ Live linter showing:
 @architect What is the high-level vision for this architecture?
 @architect /graph
 @architect Explain the key decisions made so far and their rationale
+```
+
+### Documenting an Existing Codebase
+
+```
+# Open the repo folder in VS Code, then:
+@architect /scan
+# Review what was auto-detected
+@architect /status
+@architect /review
+# Fill in business context that code alone can't infer
+@architect /update Add executive summary to A1_Architecture_Vision: [describe your initiative]
+# Add more repos to the same vault
+@architect /scan --append
 ```
 
 ### Sprint Planning

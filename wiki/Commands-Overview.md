@@ -26,6 +26,8 @@ Complete reference for every `@architect` command. Commands are grouped by wheth
 | `/archimate` | Export to ArchiMate 3.2 XML | **Yes** |
 | `/drawio` | Export to Draw.io (3 views) | **Yes** |
 | `/new <name>` | Scaffold a new TOGAF vault | **Yes** |
+| `/scan` | Generate vault from workspace source code | **Yes** |
+| `/scan --append` | Enrich existing vault with new source code signals | **Yes** |
 | `/switch` | Switch active vault | No |
 
 ## Flags
@@ -34,6 +36,7 @@ Complete reference for every `@architect` command. Commands are grouped by wheth
 |------|-----------|--------|
 | `--dry-run` / `--preview` | `/update` | Preview changes without writing |
 | `--no-analysis` | `/archimate`, `/drawio`, `/todo` | Skip AI commentary, return structured data only |
+| `--append` | `/scan` | Enrich existing vault instead of creating a new one |
 
 ---
 
@@ -151,6 +154,17 @@ Create a new vault with 27 TOGAF template files.
 ```
 @architect /new My-Project
 ```
+
+### `/scan` — Generate Vault from Source Code
+
+Scan workspace source code and generate (or enrich) a TOGAF-aligned vault. Maps source signals to TOGAF artifacts: package files → D2 standards, models → C2 data architecture, services → C1 application architecture, Docker/Terraform → D1 technology architecture, OpenAPI → B2 capabilities.
+
+```
+@architect /scan                  ← generate a new vault from source code
+@architect /scan --append         ← enrich the active vault (never overwrites approved content)
+```
+
+The `--append` flag is automatically inferred when a vault is already active.
 
 ---
 
