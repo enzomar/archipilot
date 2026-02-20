@@ -332,7 +332,7 @@
       <div class="card">
         <h4>🛠 What you'll use</h4>
         <ul>
-          <li><code>/new</code> — scaffold the vault</li>
+          <li><code>/scan</code> — auto-generate vault from source code</li>
           <li><code>/diagram</code> — auto-generate a context diagram</li>
           <li><code>/c4</code> — generate a C4 model</li>
           <li><code>/adr</code> — record a design decision</li>
@@ -344,7 +344,7 @@
     <aside class="notes">Developer intro. Set the scene clearly before starting.</aside>
   </section>
 
-  <!-- DEV 1 — /new -->
+  <!-- DEV 1 — /scan -->
   <section data-background-color="#0f172a">
     <span class="role-badge badge-dev">💻 Developer · Step 1 / 6</span>
     <div class="step-counter">
@@ -352,30 +352,33 @@
       <div class="step-dot"></div><div class="step-dot"></div>
       <div class="step-dot"></div><div class="step-dot"></div>
     </div>
-    <h2>Scaffold Your Architecture Vault</h2>
+    <h2>Generate Your Architecture Vault from Code</h2>
     <div class="tryit">
-      <strong>Open VS Code in an empty folder, then in Copilot Chat type:</strong>
+      <strong>Open VS Code in your ShopEngine repo, then in Copilot Chat type:</strong>
     </div>
     <div class="cmd-wrap">
-      <div class="cmd" id="dev-cmd-1">@architect /new ShopEngine-Architecture</div>
+      <div class="cmd" id="dev-cmd-1">@architect /scan</div>
       <button class="copy-btn" onclick="copyCmd('dev-cmd-1',this)">copy</button>
     </div>
     <div class="expect">
       <strong style="color:var(--ap-blue)">What happens:</strong>
       <ul>
-        <li>27 TOGAF-aligned Markdown files appear in Explorer</li>
-        <li>Chat shows a file listing grouped by ADM phase (Preliminary → A → B → … → H)</li>
-        <li>Suggested next commands: <code>/status</code>, <code>/analyze</code>, <code>/update</code></li>
+        <li>archipilot scans your workspace — package files, models, services, Dockerfiles, API specs, README</li>
+        <li>A TOGAF vault is created with 27 template files — then auto-populated with real information from your code</li>
+        <li>Tech stack → <code>D2_Technology_Standards_Catalog.md</code> with actual package versions</li>
+        <li>Services / controllers → <code>C1_Application_Architecture.md</code> with real component names</li>
+        <li>Data models → <code>C2_Data_Architecture.md</code> · Dockerfile/Terraform → <code>D1_Technology_Architecture.md</code></li>
+        <li>Diff preview shown before any file is written — apply with one click</li>
       </ul>
     </div>
     <div class="narration">
-      💡 These are just Markdown files in your repo. Git-tracked, no special format, no lock-in. Every file has YAML front matter with status, ownership, and TOGAF phase info.
+      💡 No existing vault? Skip <code>/scan</code> and use <code>@architect /new ShopEngine-Architecture</code> to scaffold a blank template instead.
     </div>
     <p class="nav-hint">↓ Step 2</p>
-    <aside class="notes">First live command. Encourage the user to actually run it before pressing next.</aside>
+    <aside class="notes">First live command — /scan instead of /new for the ShopEngine scenario which already has code. This is the wow moment: vault generated from real code in seconds.</aside>
   </section>
 
-  <!-- DEV 2 — Fill C1 -->
+  <!-- DEV 2 — Review & enrich C1 -->
   <section data-background-color="#0f172a">
     <span class="role-badge badge-dev">💻 Developer · Step 2 / 6</span>
     <div class="step-counter">
@@ -383,8 +386,8 @@
       <div class="step-dot"></div><div class="step-dot"></div>
       <div class="step-dot"></div><div class="step-dot"></div>
     </div>
-    <h2>Describe Your System</h2>
-    <p>Open <code>C1_Application_Architecture.md</code> and paste this — replace with your own services:</p>
+    <h2>Review & Add What Code Can't Say</h2>
+    <p>Open <code>C1_Application_Architecture.md</code> — the scan auto-populated it. Add anything it missed (business context, cross-cutting concerns):</p>
     <div class="snippet">## Target State
 - **API Gateway** (AWS API Gateway) — entry point for all external traffic
 - **Auth Service** (Node.js + Cognito) — OAuth2 / JWT
@@ -398,7 +401,7 @@
 - [[D1_Technology_Architecture]]
 - [[X1_ADR_Decision_Log]]</div>
     <div class="narration">
-      💡 The <code>[[WikiLink]]</code> syntax creates the knowledge graph archipilot uses for impact analysis.
+      💡 The <code>[[WikiLink]]</code> syntax creates the knowledge graph archipilot uses for impact analysis. Add any services the scan didn't pick up automatically.
     </div>
     <p class="nav-hint">↓ Step 3</p>
     <aside class="notes">Filling in C1 with real service names. The WikiLinks are important — explain why.</aside>
@@ -518,7 +521,7 @@ Redis gives sub-ms latency at horizontal scale</div>
     <div class="learn-box">
       <h4>✅ You learned</h4>
       <ul>
-        <li><code>/new</code> — scaffold a TOGAF-aligned vault in one command</li>
+        <li><code>/scan</code> — generate a TOGAF vault from source code in one command</li>
         <li><code>/diagram</code> and <code>/c4</code> — generate diagrams from prose</li>
         <li><code>/adr</code> — record design decisions with governance</li>
         <li><code>/status</code> and <code>/todo</code> — know what's missing, what's next</li>
@@ -526,6 +529,7 @@ Redis gives sub-ms latency at horizontal scale</div>
     </div>
     <p style="margin-top:0.3em">
       <strong style="color: var(--ap-yellow)">Next to explore:</strong>
+      <code>/scan --append</code> to add another microservice repo to this vault ·
       <code>/archimate</code> to export to Archi, BiZZdesign or Sparx EA ·
       <code>/drawio</code> for stakeholder diagrams ·
       <code>/analyze</code> for impact analysis
@@ -569,7 +573,7 @@ Redis gives sub-ms latency at horizontal scale</div>
       </div>
     </div>
     <div class="tryit">
-      <strong>Before you start:</strong> <a href="sample-vault.zip" download style="color:#a5b4fc;text-decoration:underline;">Download sample-vault.zip</a>, extract it to a local folder, and open that folder in VS Code — this gives you a realistic pre-populated vault to work from.
+      <strong>Before you start:</strong> copy <code>demo/sample-vault/</code> to a local folder and open it in VS Code — this gives you a realistic pre-populated vault to work from.
     </div>
     <p class="nav-hint">↓ Step 1 of 6</p>
     <aside class="notes">Architect track. The sample vault gives context. If they don't have it, they can run /new and fill it minimally.</aside>
@@ -787,7 +791,8 @@ zero-trust network architecture?</div>
       <div class="card">
         <h4>🛠 Full tour</h4>
         <ul>
-          <li><code>/new</code> — scaffold</li>
+          <li><code>/scan</code> — auto-generate from code</li>
+          <li><code>/new</code> — scaffold from scratch</li>
           <li><code>/decide</code> — AI analysis</li>
           <li><code>/diagram</code> + <code>/c4</code> — diagrams</li>
           <li><code>/status</code> + <code>/todo</code> — health</li>
@@ -1037,7 +1042,7 @@ for a team of 5 developers building a B2C platform?</div>
     <div class="learn-box">
       <h4>✅ Full tour complete</h4>
       <ul>
-        <li><code>/new</code> <code>/decide</code> <code>/diagram</code> <code>/c4</code> <code>/status</code> <code>/todo</code> <code>/archimate</code> <code>/drawio</code></li>
+        <li><code>/scan</code> <code>/new</code> <code>/decide</code> <code>/diagram</code> <code>/c4</code> <code>/status</code> <code>/todo</code> <code>/archimate</code> <code>/drawio</code></li>
       </ul>
     </div>
     <div style="text-align:center; margin-top:0.25em">
@@ -1074,6 +1079,9 @@ for a team of 5 developers building a B2C platform?</div>
       </div>
     </div>
     <div style="margin-top:0.4em; display:flex; justify-content:center; gap:0.4em; flex-wrap:wrap">
+      <div style="font-size:0.55em; background:#1e293b; padding:0.25em 0.55em; border-radius:4px; color:#94a3b8;">
+        🔍 /scan — vault from source code
+      </div>
       <div style="font-size:0.55em; background:#1e293b; padding:0.25em 0.55em; border-radius:4px; color:#94a3b8;">
         🆓 Free · MIT License
       </div>
