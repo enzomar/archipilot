@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **X6_Technical_Debt_Log** template — Dedicated cross-phase register for tracking, prioritising, and resolving technical debt, with links to applications (C3), risks (X2), open questions (X3), and decisions (X1).
+- **Description column** in `C3_Application_Portfolio_Catalog` template — Application portfolio now includes a Description field for each entry.
 - **`/impact` command** — Scan the entire vault for cross-references to any TOGAF ID (e.g. `AD-02`, `R-05`, `WP-03`) and display a structured impact chain showing every file and section that mentions it.
 - **Architecture Health sidebar view** — Phase readiness scores (0–100 %) per ADM phase, metadata-gap detection, capability/scenario/contract/traceability gap extractors with 18 TODO categories.
 - **Shared diagram helpers** (`src/core/diagram-helpers.ts`) — Pure helper functions (`nextAdrId`, `formatAdrEntry`, `safeNodeId`, `extractWikiLinks`, `generateContextDiagramMermaid`, `generateVaultGraphMermaid`) used by both palette commands and chat handlers, eliminating duplicated logic.
@@ -122,7 +124,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `/new` command now scaffolds 27 template files (was 25).
+- `/new` command now scaffolds 28 template files (was 25).
 - `updater.ts` refactored: separate `validateCommands()`, `previewCommands()`, and `applyCommands()` pipeline.
 - `vault.ts` `buildContext()` now uses a character budget with priority tiers instead of naive concatenation.
 - README updated with full file reference for G2 and X5, source-tree description, demo section.

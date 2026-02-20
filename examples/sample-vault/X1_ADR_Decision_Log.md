@@ -39,6 +39,14 @@ owner: TBD
 
 _Pending._
 
+## Status Legend
+- **Proposed** — Under consideration, not yet reviewed
+- **Open** — Actively being discussed
+- **Approved** — Accepted by Architecture Board
+- **Rejected** — Declined with documented rationale
+- **Superseded** — Replaced by a newer decision
+- **Deprecated** — No longer applicable
+
 ### Consequences
 
 - Option A: ...

@@ -75,6 +75,14 @@ describe('buildVaultTemplate', () => {
     assert.ok(matrix.content.includes('Traceability'), 'Missing traceability title');
   });
 
+  it('generates X6_Technical_Debt_Log template', () => {
+    const debt = files.find((f) => f.name === 'X6_Technical_Debt_Log.md');
+    assert.ok(debt, 'X6_Technical_Debt_Log.md not found in template');
+    assert.ok(debt.content.includes('Technical Debt'), 'Missing technical debt title');
+    assert.ok(debt.content.includes('Application'), 'Missing Application column for cross-referencing');
+    assert.ok(debt.content.includes('Related Risk'), 'Missing Related Risk column');
+  });
+
   it('includes project name in the index', () => {
     const index = files.find((f) => f.name === '00_Architecture_Repository.md');
     assert.ok(index?.content.includes('Test-Project'), 'Project name not in index');

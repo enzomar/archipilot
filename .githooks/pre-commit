@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# ────────────────────────────────────────────────────────────────
+# Pre-commit hook: regenerate Obsidian templates when vault
+# template sources change.
+#
+# Installed automatically by `npm install` via the `prepare` script
+# which sets `core.hooksPath` to `.githooks/`.
+#
+# Safe & fast:
+#   • Only runs the generator when src/templates/ or
+#     src/vault-template.ts files are in the staged changeset.
+#   • Deterministic — same source always produces same output.
+#   • Adds regenerated files to the commit automatically.
+# ────────────────────────────────────────────────────────────────
+
+# Check if any template source files are staged
+TEMPLATE_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^src/(templates/|vault-template\.ts)')
+
+if [ -z "$TEMPLATE_FILES" ]; then
+  # No template changes staged — nothing to do
+  exit 0
+fi
+
+echo "🔄 Template sources changed — regenerating Obsidian templates…"
+
+# Regenerate
+if npx tsx scripts/generate-obsidian-templates.ts; then
+  # Stage the regenerated files
+  git add obsidian-templates/
+  echo "✅ Obsidian templates regenerated and staged."
+else
+  echo "⚠️  Obsidian template generation failed — committing anyway."
+  echo "   Run 'npm run generate:obsidian' manually to investigate."
+  # Exit 0 so we don't block the commit over generated files
+fi
+
+exit 0

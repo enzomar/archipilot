@@ -18,6 +18,16 @@ last_updated: 2024-01-15
 | Security Team | Compliance | Medium | High | Keep satisfied |
 | Finance | Budget owner | Low | High | Monitor |
 
+## Influence Legend
+- **High** — Can veto or mandate architectural decisions
+- **Medium** — Can shape decisions through expertise or budget
+- **Low** — Affected by decisions but limited direct authority
+
+## Engagement Legend
+- **Inform** — One-way communication; no input required
+- **Consult** — Two-way communication; input sought but decision lies elsewhere
+- **Collaborate** — Active partnership in decision-making
+
 ## Communication Plan
 
 | Audience | Frequency | Format | Owner |

@@ -23,6 +23,25 @@ togaf_phase: Cross
 | R-06 | EU regulatory change (PSD3 timeline slip) | Regulatory | Low | Medium | 🟢 Low | Monitoring | EA Team |
 | R-07 | Budget overrun on cloud infra | Financial | Medium | Medium | 🟡 Medium | Open | PMO |
 
+## Probability / Impact Legend
+- **H (High)** — Likely to occur / Severe impact on architecture, timeline, or budget
+- **M (Medium)** — Possible / Moderate impact, manageable with mitigation
+- **L (Low)** — Unlikely / Minor impact, acceptable risk
+
+## Severity Matrix
+
+| | **Impact H** | **Impact M** | **Impact L** |
+|---|---|---|---|
+| **Prob. H** | Critical | High | Medium |
+| **Prob. M** | High | Medium | Low |
+| **Prob. L** | Medium | Low | Low |
+
+## Status Legend
+- **Open** — Identified, not yet mitigated
+- **Mitigating** — Mitigation actions in progress
+- **Accepted** — Risk acknowledged, no further action planned
+- **Closed** — Risk resolved or no longer applicable
+
 ---
 
 ## R-01 — API Gateway PoC Delayed

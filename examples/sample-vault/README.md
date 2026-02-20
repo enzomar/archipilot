@@ -11,7 +11,7 @@ This is a minimal TOGAF-aligned architecture vault you can use to try archipilot
 
 ## Creating Your Own Vault
 
-Use `@architect /new My-Project-Name` to scaffold a full vault with all 25 TOGAF template files.
+Use `@architect /new My-Project-Name` to scaffold a full vault with all 28 TOGAF template files.
 
 ## File Structure
 

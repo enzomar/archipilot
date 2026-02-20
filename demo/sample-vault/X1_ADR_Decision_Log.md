@@ -21,6 +21,14 @@ togaf_phase: Cross
 | AD-04 | Database for payment events | ✅ Decided | 2026-01-15 | Medium |
 | AD-05 | Fraud model serving infrastructure | ✅ Decided | 2026-02-01 | Medium |
 
+## Status Legend
+- **Proposed** — Under consideration, not yet reviewed
+- **Open** — Actively being discussed
+- **Approved** — Accepted by Architecture Board
+- **Rejected** — Declined with documented rationale
+- **Superseded** — Replaced by a newer decision
+- **Deprecated** — No longer applicable
+
 ---
 
 ## AD-01 — API Gateway Vendor Selection

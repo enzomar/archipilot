@@ -17,14 +17,14 @@ The current PayPath platform is a monolithic J2EE application deployed on-premis
 
 ### Current Application Components
 
-| ID | Component | Technology | Role | Status |
-|----|-----------|-----------|------|--------|
-| APP-01 | Legacy Payment Monolith | J2EE / JBoss 6 | Core payment processing | EOL Q4 2026 |
-| APP-02 | Fraud Rules Engine | Drools (on-prem) | Batch fraud scoring | To be replaced |
-| APP-03 | Merchant Portal | JSF / JSP | Merchant self-service | To be replaced |
-| APP-04 | Reporting Service | Crystal Reports / Oracle | Reconciliation & reporting | To be replaced |
-| APP-05 | SAP Connector | SAP XI/PI | ERP integration | To be retained |
-| APP-06 | Card Scheme Adapters | Custom SOAP | Visa/Mastercard connectivity | To be rebuilt |
+| ID | Component | Technology | Role | Status | Description |
+|----|-----------|-----------|------|--------|-------------|
+| APP-01 | Legacy Payment Monolith | J2EE / JBoss 6 | Core payment processing | EOL Q4 2026 | A monolithic application for processing payments. |
+| APP-02 | Fraud Rules Engine | Drools (on-prem) | Batch fraud scoring | To be replaced | A rules engine for batch fraud detection. |
+| APP-03 | Merchant Portal | JSF / JSP | Merchant self-service | To be replaced | A portal for merchants to manage their accounts. |
+| APP-04 | Reporting Service | Crystal Reports / Oracle | Reconciliation & reporting | To be replaced | A service for generating financial reports. |
+| APP-05 | SAP Connector | SAP XI/PI | ERP integration | To be retained | Connects the system to SAP ERP. |
+| APP-06 | Card Scheme Adapters | Custom SOAP | Visa/Mastercard connectivity | To be rebuilt | Adapters for connecting to card payment networks. |
 
 ```mermaid
 flowchart LR

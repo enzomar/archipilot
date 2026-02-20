@@ -24,6 +24,12 @@ togaf_phase: Requirements Management
 | FR-07 | System shall generate daily reconciliation reports compatible with SAP S/4HANA import formats | Must | Finance Team | ✅ Accepted | Finance Team |
 | FR-08 | System shall support multi-currency settlement in EUR, GBP, PLN, CZK, HUF, RON | Should | BD-05 | 🟡 Draft | TBD |
 
+## Priority Legend (MoSCoW)
+- **Must** — Non-negotiable; system is unacceptable without it
+- **Should** — Important but not critical; workaround exists
+- **Could** — Desirable; include if time/budget permits
+- **Won’t** — Explicitly excluded from current scope (may revisit later)
+
 ---
 
 ## Non-Functional Requirements
@@ -39,6 +45,21 @@ togaf_phase: Requirements Management
 | NFR-07 | Disaster recovery | RTO < 15 min, RPO < 1 min for payment data | Must | 🟡 Draft | Platform Team |
 | NFR-08 | Infrastructure cost | < €90,000/month at projected load | Should | 🟡 Draft | PMO |
 | NFR-09 | API backwards compatibility | 12-month deprecation notice for breaking changes | Should | 🟡 Draft | Integration Team |
+
+## NFR Category Legend
+- **Performance** — Response time, throughput, latency targets
+- **Availability** — Uptime SLA, failover, disaster recovery
+- **Security** — Authentication, authorisation, encryption, compliance
+- **Scalability** — Horizontal/vertical scaling, elasticity
+- **Observability** — Logging, metrics, tracing, alerting
+- **Maintainability** — Code quality, testability, deployment frequency
+- **Portability** — Multi-cloud, container, platform independence
+
+## Status Legend
+- **Open** — Requirement identified, not yet validated
+- **Validated** — Confirmed with stakeholders
+- **Implemented** — Delivered and verified
+- **Deferred** — Postponed to a later phase
 
 ---
 

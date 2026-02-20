@@ -20,6 +20,22 @@ togaf_phase: Cross
 | Q-05 | What is the data retention policy for payment events in Cassandra? Regulatory minimum vs cost | Data | Medium | Compliance | 2026-03-15 | Open |
 | Q-06 | Will the SAP Connector need to support real-time event subscription, or is batch sync sufficient? | Integration | Medium | Finance Team | 2026-03-30 | Open |
 
+## Category Legend
+- **Strategic** — High-level direction, business alignment
+- **Governance** — Process, review cadence, decision authority
+- **Data** — Data models, ownership, quality, residency
+- **Technology** — Platform, tooling, infrastructure choices
+- **Security** — Authentication, authorisation, encryption, compliance
+- **Integration** — APIs, protocols, external system dependencies
+- **Financial** — Budget, licensing, cost models
+- **Regulatory** — Legal, compliance, audit requirements
+
+## Status Legend
+- **Open** — Awaiting answer
+- **In Discussion** — Being actively investigated
+- **Answered** — Resolved; answer recorded
+- **Deferred** — Postponed to a later phase
+
 ---
 
 ## Q-01 — PCI Payload Inspection: Gateway or Service?

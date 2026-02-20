@@ -445,7 +445,7 @@ Generate Mermaid Gantt charts from your roadmap and migration plan.
 
 ### `@architect /new` — Scaffold a New Vault
 
-Create a fresh TOGAF-aligned vault with all 27 template files.
+Create a fresh TOGAF-aligned vault with all 28 template files.
 
 ```
 @architect /new Create a new vault called Payment-Platform-Architecture
@@ -665,6 +665,7 @@ My-Architecture-Vault/
 │── X3_Open_Questions.md            ← Questions tracked by phase & owner
 │── X4_Sizing_Catalogue.md          ← Component sizing, capacity, cost estimates
 │── X5_Traceability_Matrix.md       ← End-to-end traceability (driver → req → component → decision)
+│── X6_Technical_Debt_Log.md        ← Technical debt register with resolution tracking
 ```
 
 ### How to Use Each File
@@ -761,7 +762,7 @@ src/
   vault.ts            – Vault discovery, loading, switching, context windowing
   prompts.ts          – TOGAF system prompts per mode
   updater.ts          – Diff preview, file editor, audit log & backup
-  vault-template.ts   – TOGAF vault scaffolding (27 template files)
+  vault-template.ts   – TOGAF vault scaffolding (28 template files)
   source-scanner.ts   – Workspace scanner for /scan (file discovery & content extraction)
   types.ts            – TypeScript interfaces
   core/               – Pure logic (zero vscode imports)
@@ -799,7 +800,7 @@ You don't need to be a TOGAF expert to use archipilot. Here's how to get product
 @architect /new My-First-Architecture
 ```
 
-This creates 27 template files covering all architecture domains. Don't worry about the naming — the prefixes (`A1_`, `B1_`, `C1_`, etc.) are just a filing convention.
+This creates 28 template files covering all architecture domains. Don't worry about the naming — the prefixes (`A1_`, `B1_`, `C1_`, etc.) are just a filing convention.
 
 ### 2. Start with what you know
 
@@ -878,6 +879,7 @@ Quick reference for TOGAF terms used throughout archipilot. You don't need to me
 | **Phase Gate** | A governance checkpoint where an ADM phase is assessed for readiness before proceeding | `/gate` command |
 | **Stakeholder** | Anyone affected by or having authority over the architecture | `A2_Stakeholder_Map.md` |
 | **Traceability** | End-to-end linking from business driver → requirement → component → decision → risk | `X5_Traceability_Matrix.md` |
+| **Technical Debt** | Architectural shortcuts, workarounds, or deferred work requiring future resolution | `X6_Technical_Debt_Log.md` |
 | **RACI** | Responsible / Accountable / Consulted / Informed matrix | `A2_Stakeholder_Map.md` |
 | **NFR** | Non-Functional Requirement (performance, security, scalability, etc.) | `R1_Architecture_Requirements.md` |
 | **Work Package** | A defined chunk of delivery work in the migration roadmap | `F1_Architecture_Roadmap.md` |

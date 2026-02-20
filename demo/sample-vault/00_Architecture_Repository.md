@@ -35,6 +35,7 @@ togaf_phase: Preliminary
 | X1 | [[X1_ADR_Decision_Log]] | Cross | 🟡 Active | EA Team | — |
 | X2 | [[X2_Risk_Issue_Register]] | Cross | 🟡 Active | Risk Team | — |
 | X3 | [[X3_Open_Questions]] | Cross | 🟡 Active | EA Team | — |
+| X6 | [[X6_Technical_Debt_Log]] | Cross | 🟡 Active | EA Team | — |
 
 ---
 

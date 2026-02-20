@@ -22,3 +22,5 @@ owner: TBD
 ## Cross-Phase
 - [[X1_ADR_Decision_Log]]
 - [[X2_Risk_Issue_Register]]
+- [[X3_Open_Questions]]
+- [[X6_Technical_Debt_Log]]

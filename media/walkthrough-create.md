@@ -6,7 +6,7 @@ Use the `/new` command to generate a complete architecture vault:
 @architect /new MyProject
 ```
 
-This creates **27 template files** covering all TOGAF ADM phases:
+This creates **28 template files** covering all TOGAF ADM phases:
 
 - **Phase A** – Architecture Vision
 - **Phase B** – Business Architecture

@@ -92,3 +92,10 @@ flowchart LR
 | 2026-08-01 | Canary migration start | 🟡 On track (conditional) |
 | 2026-11-30 | Full migration complete | 🟡 On track (conditional) |
 | 2026-12-31 | Legacy decommission | 🟡 On track (conditional) |
+
+## Status Legend
+- **Not started** — Work not yet begun
+- **In progress** — Actively being worked on
+- **Blocked** — Cannot proceed; dependency or issue outstanding
+- **Complete** — Delivered and verified
+- **Deferred** — Postponed to a later phase

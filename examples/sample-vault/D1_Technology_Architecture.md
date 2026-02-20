@@ -26,6 +26,12 @@ last_updated: 2024-01-15
 
 ## Standards & Constraints
 
+### Environment Legend
+- **Cloud** — Hosted on public cloud provider (AWS, Azure, GCP)
+- **On-prem** — Deployed in own data centre
+- **Hybrid** — Combination of cloud and on-premises
+- **Edge** — Deployed at edge locations close to end users
+
 - All services containerised (Docker)
 - TLS 1.3 for all external traffic
 - Secrets via AWS Secrets Manager — no env-var secrets

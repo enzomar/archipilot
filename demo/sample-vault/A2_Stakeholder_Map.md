@@ -42,6 +42,16 @@ togaf_phase: A
 
 *R = Responsible, A = Accountable, C = Consulted, I = Informed*
 
+## Influence Legend
+- **High** — Can veto or mandate architectural decisions
+- **Medium** — Can shape decisions through expertise or budget
+- **Low** — Affected by decisions but limited direct authority
+
+## Engagement Legend
+- **Inform** — One-way communication; no input required
+- **Consult** — Two-way communication; input sought but decision lies elsewhere
+- **Collaborate** — Active partnership in decision-making
+
 ---
 
 ## Stakeholder Concerns Map

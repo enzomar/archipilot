@@ -352,7 +352,9 @@
     "lint": "eslint src/",
     "test": "node --import tsx --test src/test/*.test.ts",
     "deploy:wiki": "bash scripts/deploy-wiki.sh",
-    "deploy:pages": "bash scripts/deploy-gh-pages.sh"
+    "deploy:pages": "bash scripts/deploy-gh-pages.sh",
+    "generate:obsidian": "npx tsx scripts/generate-obsidian-templates.ts",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

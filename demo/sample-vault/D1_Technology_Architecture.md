@@ -119,6 +119,12 @@ flowchart TB
 
 ## Open Items
 
+### Environment Legend
+- **Cloud** — Hosted on public cloud provider (AWS, Azure, GCP)
+- **On-prem** — Deployed in own data centre
+- **Hybrid** — Combination of cloud and on-premises
+- **Edge** — Deployed at edge locations close to end users
+
 - **AD-01**: API Gateway vendor — blocks finalization of networking section
 - **AD-02**: Message bus — blocks MSK vs Pulsar specification
 - **AD-03**: Multi-cloud strategy — determines DR complexity and Azure inclusion

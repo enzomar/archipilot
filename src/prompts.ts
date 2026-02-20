@@ -680,6 +680,11 @@ P1_Architecture_Principles.md
   Signals:  Consistent patterns in codebase (API-first if OpenAPI present,
             containerized if Docker present, IaC if Terraform present, etc.)
 
+X6_Technical_Debt_Log.md
+  Sections: ## Debt Register
+  Signals:  TODO/FIXME/HACK/DEBT comments, deprecated dependencies, EOL software,
+            workaround patterns, missing tests, hardcoded values, known anti-patterns
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT RULES:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

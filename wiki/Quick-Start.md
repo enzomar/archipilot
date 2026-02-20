@@ -35,7 +35,7 @@ Open Copilot Chat and type:
 @architect /new My-First-Architecture
 ```
 
-This creates **27 template files** covering all architecture domains. Don't worry about the naming — the prefixes (`A1_`, `B1_`, `C1_`, etc.) are just a filing convention.
+This creates **28 template files** covering all architecture domains. Don't worry about the naming — the prefixes (`A1_`, `B1_`, `C1_`, etc.) are just a filing convention.
 
 ## 2. Start with What You Know
 
