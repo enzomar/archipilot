@@ -1544,6 +1544,12 @@ export class ArchitectParticipant {
         (scan.readmeFiles.length > 0
           ? `- 📄 **Documentation:** ${scan.readmeFiles.map((f) => f.relativePath).join(', ')}\n`
           : '') +
+        (scan.openEditorFiles.length > 0
+          ? `- 🖊️ **Open Editors:** ${scan.openEditorFiles.map((f) => f.relativePath).join(', ')}\n`
+          : '') +
+        (scan.directoryTree
+          ? `- 🌳 **Directory tree:** captured\n`
+          : '') +
         `\n**Project name detected:** \`${scan.projectName}\`\n\n`
     );
 

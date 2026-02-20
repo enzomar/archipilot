@@ -65,7 +65,7 @@
     "viewsWelcome": [
       {
         "view": "archipilot.vaultExplorer",
-        "contents": "No architecture vault detected.\n[Create New Vault](command:archipilot.newVault)\n[Switch Vault](command:archipilot.switchVault)"
+        "contents": "No architecture vault detected.\n[Create New Vault](command:archipilot.newVault)\n[Scan Workspace](command:archipilot.scanWorkspace)\n[Switch Vault](command:archipilot.switchVault)"
       }
     ],
     "chatParticipants": [
@@ -171,6 +171,11 @@
       {
         "command": "archipilot.newVault",
         "title": "archipilot: Create New Architecture Vault"
+      },
+      {
+        "command": "archipilot.scanWorkspace",
+        "title": "archipilot: Scan Workspace & Generate Vault",
+        "icon": "$(search)"
       },
       {
         "command": "archipilot.recordDecision",

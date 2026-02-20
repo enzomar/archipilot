@@ -117,6 +117,15 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   context.subscriptions.push(
+    vscode.commands.registerCommand('archipilot.scanWorkspace', async () => {
+      // Open Copilot Chat with the /scan command
+      vscode.commands.executeCommand('workbench.action.chat.open', {
+        query: '@architect /scan',
+      });
+    })
+  );
+
+  context.subscriptions.push(
     vscode.commands.registerCommand('archipilot.exportArchimate', async () => {
       try {
         const vaultPath = vaultManager.activeVaultPath || await vaultManager.autoDetectVault();
