@@ -13,7 +13,7 @@
 set -euo pipefail
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-WIKI_REMOTE="https://github.com/enzomar/archipilot.wiki.git"
+WIKI_REMOTE="git@github.com:enzomar/archipilot.wiki.git"
 WIKI_BRANCH="master"   # GitHub wikis always use 'master'
 COMMIT_MSG="${1:-"chore: sync wiki from local wiki/ folder [$(date -u +%Y-%m-%dT%H:%M:%SZ)]"}"
 
