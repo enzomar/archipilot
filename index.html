@@ -769,6 +769,7 @@
   <p class="hero-sub">
     archipilot turns your Obsidian architecture vault into an AI-powered TOGAF assistant.
     Ask questions, record decisions, export to ArchiMate and Draw.io — all via <code style="font-family:monospace;color:#a5b4fc">@architect</code> in Copilot Chat.
+    Run with GitHub Copilot <strong>or your own local LLM</strong>.
   </p>
 
   <div class="hero-actions">
@@ -780,7 +781,7 @@
   </div>
 
   <p style="font-size:.85rem;color:var(--green);margin-top:-.5rem;margin-bottom:2rem;font-weight:600;">
-    ✓ 100% free today &nbsp;·&nbsp; MIT-licensed &nbsp;·&nbsp; No account required
+    ✓ 100% free today &nbsp;·&nbsp; MIT-licensed &nbsp;·&nbsp; No account required &nbsp;·&nbsp; Works offline with local LLMs
     <span style="color:var(--muted);font-weight:400"> &nbsp;·&nbsp; may change in the future</span>
   </p>
 
@@ -811,7 +812,7 @@
       <span class="dot dot-r"></span>
       <span class="dot dot-y"></span>
       <span class="dot dot-g"></span>
-      <span class="window-title">GitHub Copilot Chat — @architect</span>
+      <span class="window-title">GitHub Copilot Chat — @architect (or Local LLM)</span>
     </div>
     <div class="chat-body">
       <div class="chat-msg">
@@ -885,7 +886,12 @@
         <p>Generate C4 context and container diagrams (<code style="font-family:monospace;color:#a5b4fc">/c4</code>), full vault dependency graphs (<code style="font-family:monospace;color:#a5b4fc">/graph</code>), file-level context diagrams (<code style="font-family:monospace;color:#a5b4fc">/diagram</code>), and Gantt roadmaps (<code style="font-family:monospace;color:#a5b4fc">/timeline</code>).</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🌍</div>
+        <div class="feature-icon">�</div>
+        <h3>Local LLM Support</h3>
+        <p>Run fully offline with <strong>LM Studio</strong>, <strong>GPT4All</strong>, <strong>Ollama</strong>, or any OpenAI-compatible server. One setting to switch — no API keys, no cloud dependency. Perfect for air-gapped or data-sensitive environments.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">�🌍</div>
         <h3>Fully Open-Source (MIT)</h3>
         <p>Every line — parsing, prompts, exporters, and the chat participant — is MIT-licensed and publicly auditable on GitHub. No black boxes.</p>
       </div>
@@ -970,7 +976,7 @@
           <li><span class="check">✓</span> Unlimited seats</li>
         </ul>
         <div class="plan-cta">
-          <a href="mailto:sales@archipilot.dev?subject=Enterprise%20enquiry"
+          <a href="mailto:novorama@zohomail.eu?subject=ArchiPilot%20Enterprise%20enquiry"
              class="btn btn-outline" style="width:100%;justify-content:center">
             Contact sales
           </a>
@@ -1012,7 +1018,7 @@
     <div class="section-label" style="text-align:center">Interactive demo</div>
     <h2 class="section-title" style="text-align:center">Try it yourself — pick your role</h2>
     <p class="section-sub" style="text-align:center;margin:0 auto 2.5rem">
-      Hands-on exercises you can follow along in VS Code. Requires <a href="https://marketplace.visualstudio.com/items?itemName=enzomar.archipilot" target="_blank" style="color:var(--accent)">archipilot</a> installed and a <a href="https://github.com/features/copilot" target="_blank" style="color:var(--accent)">GitHub Copilot</a> subscription.
+      Hands-on exercises you can follow along in VS Code. Requires <a href="https://marketplace.visualstudio.com/items?itemName=enzomar.archipilot" target="_blank" style="color:var(--accent)">archipilot</a> installed and either a <a href="https://github.com/features/copilot" target="_blank" style="color:var(--accent)">GitHub Copilot</a> subscription or a <a href="https://lmstudio.ai/" target="_blank" style="color:var(--accent)">local LLM server</a>.
     </p>
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;">
@@ -1170,7 +1176,12 @@
 
     <details>
       <summary>Do I need a GitHub Copilot subscription?</summary>
-      <p>Yes. archipilot works as a chat participant inside GitHub Copilot Chat, so an active Copilot subscription (Individual, Business, or Enterprise) is required.</p>
+      <p>By default, yes — archipilot works as a chat participant inside GitHub Copilot Chat. However, you can also run it with a <strong>local LLM</strong> (LM Studio, GPT4All, Ollama, etc.) by setting <code style="font-family:monospace;color:#a5b4fc">archipilot.llm.provider</code> to <code style="font-family:monospace;color:#a5b4fc">"local"</code>. In local mode, no Copilot subscription or internet connection is needed.</p>
+    </details>
+
+    <details>
+      <summary>Which local LLMs are supported?</summary>
+      <p>Any server that exposes an OpenAI-compatible <code style="font-family:monospace;color:#a5b4fc">/v1/chat/completions</code> endpoint. Tested with <strong>LM Studio</strong>, <strong>GPT4All</strong>, <strong>Ollama</strong>, <strong>llama.cpp</strong>, <strong>LocalAI</strong>, and <strong>vLLM</strong>. For best results, use a model with 7B+ parameters and 8K+ context — Mistral 7B Instruct, Llama 3.1 8B, or Qwen 2.5 7B work well for architecture analysis.</p>
     </details>
 
     <details>
