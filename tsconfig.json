@@ -14,5 +14,5 @@
     "declaration": true,
     "moduleResolution": "Node16"
   },
-  "exclude": ["node_modules", "out", ".vscode-test"]
+  "exclude": ["node_modules", "out", ".vscode-test", "scripts"]
 }
