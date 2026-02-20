@@ -530,6 +530,7 @@ Redis gives sub-ms latency at horizontal scale</div>
     <p style="margin-top:0.3em">
       <strong style="color: var(--ap-yellow)">Next to explore:</strong>
       <code>/scan --append</code> to add another microservice repo to this vault ·
+      <code>/audit</code> to run a unified health check (status + review + gate) ·
       <code>/archimate</code> to export to Archi, BiZZdesign or Sparx EA ·
       <code>/drawio</code> for stakeholder diagrams ·
       <code>/analyze</code> for impact analysis
@@ -655,12 +656,12 @@ and the team's limited infra ops capacity</div>
       <button class="copy-btn" onclick="copyCmd('arch-cmd-3',this)">copy</button>
     </div>
     <div class="expect">
-      <strong style="color:var(--ap-blue)">Expected — vault-grounded analysis:</strong>
+      <strong style="color:var(--ap-blue)">Expected — vault-grounded analysis (Step 1 of 2):</strong>
       <ul>
         <li>AI reads your full vault context — PCI-DSS risk, team skills, multi-cloud question</li>
         <li>Structured analysis streamed as markdown in chat (pros / cons, recommendation)</li>
-        <li>May include structured vault update proposals — review in diff preview before applying</li>
-        <li>Suggested follow-up: <code>/adr</code> to record the decision</li>
+        <li><em>No vault changes at this stage</em> — this is analysis-only</li>
+        <li>Confirm to proceed to Step 2: <code>Yes, go with AWS API Gateway</code> — records the decision</li>
       </ul>
     </div>
     <div class="narration">
@@ -760,6 +761,7 @@ zero-trust network architecture?</div>
       <strong style="color: var(--ap-yellow)">Next to explore:</strong>
       <code>/archimate</code> — export your vault to Archi or BiZZdesign ·
       <code>/drawio</code> — prepare stakeholder slides ·
+      <code>/audit</code> — unified vault health check ·
       <code>/update</code> — governed document updates
     </p>
     <div style="margin-top:0.25em; text-align:center">
@@ -1042,7 +1044,7 @@ for a team of 5 developers building a B2C platform?</div>
     <div class="learn-box">
       <h4>✅ Full tour complete</h4>
       <ul>
-        <li><code>/scan</code> <code>/new</code> <code>/decide</code> <code>/diagram</code> <code>/c4</code> <code>/status</code> <code>/todo</code> <code>/archimate</code> <code>/drawio</code></li>
+        <li><code>/scan</code> <code>/new</code> <code>/decide</code> <code>/diagram</code> <code>/c4</code> <code>/status</code> <code>/todo</code> <code>/audit</code> <code>/archimate</code> <code>/drawio</code></li>
       </ul>
     </div>
     <div style="text-align:center; margin-top:0.25em">
